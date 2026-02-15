@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useWallet } from '../hooks/useWallet';
 import { useAppStore } from '../stores/useAppStore';
 import Navbar from '../components/Navbar';
+import RoleSelectModal from '../components/RoleSelectModal';
 import CreateProjectModal from '../components/CreateProjectModal';
 import CreateGigModal from '../components/CreateGigModal';
 import ChatWidget from '../components/ChatWidget';
@@ -15,9 +16,10 @@ const MainLayout: React.FC = () => {
   const {
     wallet, searchTerm, isModalOpen, isGigModalOpen,
     modalInitialData, activeChatContact, isProcessing,
+    userRole, showRoleModal,
     init, syncWallet, setSearchTerm, setIsModalOpen,
     setIsGigModalOpen, setActiveChatContact, setIsProcessing,
-    handleCreateProject, handleCreateGig, incrementBlock,
+    setUserRole, handleCreateProject, handleCreateGig, incrementBlock,
   } = useAppStore();
 
   useEffect(() => {
@@ -29,6 +31,16 @@ const MainLayout: React.FC = () => {
   useEffect(() => {
     syncWallet(isSignedIn, userAddress);
   }, [isSignedIn, userAddress]);
+
+  // Auto-navigate to saved role dashboard on reconnect
+  useEffect(() => {
+    if (wallet.isConnected && userRole && !showRoleModal) {
+      const target = userRole === 'client' ? '/client' : '/freelancer';
+      if (location.pathname === '/') {
+        navigate(target);
+      }
+    }
+  }, [wallet.isConnected, userRole, showRoleModal]);
 
   const handleConnect = async () => {
     try {
@@ -42,6 +54,7 @@ const MainLayout: React.FC = () => {
   };
 
   const handleDisconnect = () => {
+    localStorage.removeItem('stxworx_user_role');
     disconnect();
     navigate('/');
   };
@@ -83,6 +96,11 @@ const MainLayout: React.FC = () => {
     }
   };
 
+  const handleRoleSelect = (role: 'client' | 'freelancer') => {
+    setUserRole(role);
+    navigate(role === 'client' ? '/client' : '/freelancer');
+  };
+
   const isAdminRoute = location.pathname.startsWith('/admin');
   if (isAdminRoute) {
     return <Outlet />;
@@ -92,6 +110,7 @@ const MainLayout: React.FC = () => {
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans selection:bg-orange-500/30">
       <Navbar
         wallet={wallet}
+        userRole={userRole}
         onConnect={handleConnect}
         onDisconnect={handleDisconnect}
         currentView={pathToView() as any}
@@ -121,6 +140,8 @@ const MainLayout: React.FC = () => {
         externalContact={activeChatContact}
         onCloseExternal={() => setActiveChatContact(null)}
       />
+
+      <RoleSelectModal open={showRoleModal} onSelect={handleRoleSelect} onClose={handleDisconnect} />
     </div>
   );
 };

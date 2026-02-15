@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { Wallet, LogOut, Menu, X, Hexagon, Zap, Search, Twitter, ChevronRight } from 'lucide-react';
-import { WalletState, ViewType } from '../types';
+import { WalletState, ViewType, UserRole } from '../types';
 
 interface NavbarProps {
   wallet: WalletState;
+  userRole: UserRole;
   onConnect: () => void;
   onDisconnect: () => void;
   currentView: string;
@@ -13,7 +14,7 @@ interface NavbarProps {
   onSearchChange: (term: string) => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ wallet, onConnect, onDisconnect, currentView, onNavigate, searchTerm, onSearchChange }) => {
+const Navbar: React.FC<NavbarProps> = ({ wallet, userRole, onConnect, onDisconnect, currentView, onNavigate, searchTerm, onSearchChange }) => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
   const NavLink = ({ view, label }: { view: ViewType; label: string }) => (
@@ -109,11 +110,11 @@ const Navbar: React.FC<NavbarProps> = ({ wallet, onConnect, onDisconnect, curren
             <div className="flex items-center bg-[#0a0f1e]/50 rounded-full px-2 py-1 border border-white/5 mr-4 backdrop-blur-sm">
                <NavLink view="home" label="Home" />
                <NavLink view="browse" label="Browse Gigs" />
-               {wallet.isConnected && (
-                 <>
-                   <NavLink view="client" label="Client" />
-                   <NavLink view="freelancer" label="Freelancer" />
-                 </>
+               {wallet.isConnected && userRole === 'client' && (
+                 <NavLink view="client" label="Client" />
+               )}
+               {wallet.isConnected && userRole === 'freelancer' && (
+                 <NavLink view="freelancer" label="Freelancer" />
                )}
             </div>
 
@@ -213,11 +214,15 @@ const Navbar: React.FC<NavbarProps> = ({ wallet, onConnect, onDisconnect, curren
            <div className="space-y-2">
              <MobileMenuItem view="home" label="Home" active={currentView === 'home'} index={1} />
              <MobileMenuItem view="browse" label="Browse Gigs" active={currentView === 'browse'} index={2} />
-             {wallet.isConnected && (
+             {wallet.isConnected && userRole && (
                 <>
                   <div className={`h-px bg-slate-800/50 my-2 transition-all duration-500 delay-150 ${isMenuOpen ? 'opacity-100 width-full' : 'opacity-0 width-0'}`}></div>
-                  <MobileMenuItem view="client" label="Client Dashboard" active={currentView === 'client'} index={3} />
-                  <MobileMenuItem view="freelancer" label="Freelancer Dashboard" active={currentView === 'freelancer'} index={4} />
+                  {userRole === 'client' && (
+                    <MobileMenuItem view="client" label="Client Dashboard" active={currentView === 'client'} index={3} />
+                  )}
+                  {userRole === 'freelancer' && (
+                    <MobileMenuItem view="freelancer" label="Freelancer Dashboard" active={currentView === 'freelancer'} index={4} />
+                  )}
                 </>
              )}
            </div>

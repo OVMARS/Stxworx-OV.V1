@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { userSession, authenticate, getUserData, signout } from '../../lib/stacks';
+import { userSession, authenticate } from '../../lib/stacks';
 
 interface WalletContextType {
     userSession: typeof userSession;
@@ -64,7 +64,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     const disconnect = () => {
-        signout();
+        userSession.signUserOut('');
         setIsSignedIn(false);
         setUserData(null);
         setUserAddress(null);

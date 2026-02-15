@@ -7,6 +7,18 @@ export type TokenType = 'STX' | 'sBTC';
 
 export type MilestoneStatus = 'locked' | 'pending' | 'submitted' | 'approved' | 'refunded';
 
+export type ApplicationStatus = 'applied' | 'accepted' | 'in-progress' | 'completed';
+
+export interface Application {
+  id: string;
+  projectId: string;
+  freelancerAddress: string;
+  status: ApplicationStatus;
+  appliedAt: string;
+  coverLetter?: string;
+  project: Project;
+}
+
 export type MessageType = 'text' | 'audio' | 'file' | 'offer';
 
 export type MessageStatus = 'sent' | 'delivered' | 'read';

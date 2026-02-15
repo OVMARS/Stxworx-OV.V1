@@ -30,6 +30,10 @@ const AnimationStyles = () => (
       0% { background-position: 0 0; }
       100% { background-position: 50px 50px; }
     }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
     .animate-float { animation: float 6s ease-in-out infinite; }
     .animate-slide-up { animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     .animate-pulse-glow { animation: pulse-glow 3s infinite; }

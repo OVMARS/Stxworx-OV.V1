@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Project, Gig, FreelancerProfile, WalletState, ChatContact } from '../types';
+import { Project, Gig, FreelancerProfile, WalletState, ChatContact, UserRole, Application, ApplicationStatus } from '../types';
 import {
   fetchProjects,
   fetchGigs,
@@ -14,6 +14,9 @@ import {
   generateId,
 } from '../services/StacksService';
 
+const ROLE_STORAGE_KEY = 'stxworx_user_role';
+const APPLICATIONS_STORAGE_KEY = 'stxworx_applications';
+
 interface AppState {
   projects: Project[];
   gigs: Gig[];
@@ -23,6 +26,8 @@ interface AppState {
   selectedProfile: FreelancerProfile | null;
   selectedGig: Gig | null;
   wallet: WalletState;
+  userRole: UserRole;
+  showRoleModal: boolean;
   searchTerm: string;
   selectedCategory: string;
   currentBlock: number;
@@ -33,6 +38,8 @@ interface AppState {
   isGigModalOpen: boolean;
   modalInitialData: any;
   activeChatContact: ChatContact | null;
+  applications: Application[];
+  freelancerDashboardTab: 'applied' | 'active' | 'completed' | 'earnings' | 'nft';
 
   // Actions
   init: () => Promise<void>;
@@ -47,7 +54,13 @@ interface AppState {
   setModalInitialData: (data: any) => void;
   setActiveChatContact: (contact: ChatContact | null) => void;
   setIsProcessing: (val: boolean) => void;
+  setUserRole: (role: UserRole) => void;
+  setShowRoleModal: (show: boolean) => void;
+  clearRole: () => void;
 
+  applyToProject: (project: Project, coverLetter?: string) => void;
+  updateApplicationStatus: (applicationId: string, status: ApplicationStatus) => void;
+  setFreelancerDashboardTab: (tab: 'applied' | 'active' | 'completed' | 'earnings' | 'nft') => void;
   handleCreateProject: (data: any) => Promise<void>;
   handleCreateGig: (data: any) => Promise<void>;
   handleProjectAction: (projectId: string, actionType: string, payload?: any) => Promise<void>;
@@ -74,6 +87,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     balanceSTX: 0,
     balanceSBTC: 0,
   },
+  userRole: (localStorage.getItem(ROLE_STORAGE_KEY) as UserRole) || null,
+  showRoleModal: false,
   searchTerm: '',
   selectedCategory: 'All',
   currentBlock: 89212,
@@ -84,6 +99,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   isGigModalOpen: false,
   modalInitialData: null,
   activeChatContact: null,
+  applications: JSON.parse(localStorage.getItem(APPLICATIONS_STORAGE_KEY) || '[]'),
+  freelancerDashboardTab: 'applied',
 
   init: async () => {
     const [storedProjects, fetchedGigs, fetchedLeaderboard] = await Promise.all([
@@ -102,8 +119,11 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   syncWallet: (isSignedIn, userAddress) => {
     if (isSignedIn && userAddress) {
+      const savedRole = localStorage.getItem(ROLE_STORAGE_KEY) as UserRole;
       set((s) => ({
         wallet: { ...s.wallet, isConnected: true, address: userAddress },
+        userRole: savedRole || s.userRole,
+        showRoleModal: !savedRole && !s.userRole,
       }));
 
       fetchFreelancerByAddress(userAddress, 'You').then((profile) => {
@@ -119,6 +139,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         })
         .catch(() => {});
     } else {
+      localStorage.removeItem(ROLE_STORAGE_KEY);
       set({
         wallet: {
           isConnected: false,
@@ -129,6 +150,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           balanceSBTC: 0,
         },
         currentUserProfile: null,
+        userRole: null,
+        showRoleModal: false,
       });
     }
   },
@@ -180,7 +203,49 @@ export const useAppStore = create<AppState>((set, get) => ({
   setActiveChatContact: (contact) => set({ activeChatContact: contact }),
   setIsProcessing: (val) => set({ isProcessing: val }),
 
+  setUserRole: (role) => {
+    if (role) localStorage.setItem(ROLE_STORAGE_KEY, role);
+    else localStorage.removeItem(ROLE_STORAGE_KEY);
+    set({ userRole: role, showRoleModal: false });
+  },
+  setShowRoleModal: (show) => set({ showRoleModal: show }),
+  clearRole: () => {
+    localStorage.removeItem(ROLE_STORAGE_KEY);
+    set({ userRole: null });
+  },
+
   incrementBlock: () => set((s) => ({ currentBlock: s.currentBlock + 1 })),
+
+  setFreelancerDashboardTab: (tab) => set({ freelancerDashboardTab: tab }),
+
+  applyToProject: (project, coverLetter) => {
+    const { wallet, applications } = get();
+    if (!wallet.address) return;
+    const alreadyApplied = applications.some(
+      (a) => a.projectId === project.id && a.freelancerAddress === wallet.address
+    );
+    if (alreadyApplied) return;
+    const newApp: Application = {
+      id: generateId(),
+      projectId: project.id,
+      freelancerAddress: wallet.address,
+      status: 'applied',
+      appliedAt: new Date().toISOString(),
+      coverLetter,
+      project,
+    };
+    const updated = [...applications, newApp];
+    localStorage.setItem(APPLICATIONS_STORAGE_KEY, JSON.stringify(updated));
+    set({ applications: updated });
+  },
+
+  updateApplicationStatus: (applicationId, status) => {
+    const updated = get().applications.map((a) =>
+      a.id === applicationId ? { ...a, status } : a
+    );
+    localStorage.setItem(APPLICATIONS_STORAGE_KEY, JSON.stringify(updated));
+    set({ applications: updated });
+  },
 
   handleCreateProject: async (data) => {
     const { wallet } = get();
