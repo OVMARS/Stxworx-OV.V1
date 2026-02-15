@@ -32,6 +32,23 @@ const emptyMilestone = (): MilestoneData => ({
 const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
   const { userAddress } = useWallet();
 
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    category: '',
+    totalBudgetUSD: '', // Store USD input as string for controlled input
+    tokenType: 'STX' as TokenType,
+    freelancerAddress: '',
+  });
+
+  const [milestoneTitles, setMilestoneTitles] = useState<string[]>([
+    'Project Kickoff & Setup',
+    'Core Feature Implementation',
+    'UI/UX Polish & Integration',
+    'Final Testing & Deployment'
+  ]);
+
+
   const [step, setStep] = useState(0);
   const [projectTitle, setProjectTitle] = useState('');
   const [milestoneCount, setMilestoneCount] = useState<number | null>(null);
@@ -64,6 +81,50 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
 
   useEffect(() => {
     if (isOpen && initialData) {
+
+      setFormData({
+        title: initialData.title || '',
+        description: initialData.description || '',
+        category: initialData.category || '',
+        totalBudgetUSD: initialData.totalBudget ? String(initialData.totalBudget) : '', // Assuming initialData.totalBudget comes in as USD from the Gig Price
+        tokenType: initialData.tokenType || 'STX',
+        freelancerAddress: initialData.freelancerAddress || '',
+      });
+      // Reset milestone titles to defaults on open
+      setMilestoneTitles([
+        'Project Kickoff & Setup',
+        'Core Feature Implementation',
+        'UI/UX Polish & Integration',
+        'Final Testing & Deployment'
+      ]);
+      setAttachments([]);
+    } else if (isOpen && !initialData) {
+      // Reset if opening empty
+      setFormData({
+        title: '',
+        description: '',
+        category: '',
+        totalBudgetUSD: '',
+        tokenType: 'STX',
+        freelancerAddress: '',
+      });
+      setMilestoneTitles([
+        'Project Kickoff & Setup',
+        'Core Feature Implementation',
+        'UI/UX Polish & Integration',
+        'Final Testing & Deployment'
+      ]);
+      setAttachments([]);
+    }
+  }, [isOpen, initialData]);
+
+  // Hooks for file attachment
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setAttachments(prev => [...prev, ...newFiles]);
+    }
+
       setProjectTitle(initialData.title || '');
       setDescription(initialData.description || '');
       setCategory(initialData.category || 'Web Development');
@@ -105,6 +166,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   const handleClose = () => {
     resetForm();
     onClose();
+
   };
 
   const handleCountSelect = (count: number) => {
@@ -263,6 +325,18 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                 />
               </div>
 
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Category</label>
+                  <input
+                    required
+                    type="text"
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white focus:ring-1 focus:ring-orange-500 focus:border-orange-500 focus:outline-none transition-colors placeholder-slate-700"
+                    placeholder="e.g. Smart Contracts, Design, Writing..."
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  />
+
               <div>
                 <label className={labelClass}>Payment Token</label>
                 <div className="grid grid-cols-2 gap-3 mt-1">
@@ -281,6 +355,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                       {t}
                     </button>
                   ))}
+
                 </div>
                 <p className="text-[10px] text-slate-600 mt-2 text-right">
                   1 {tokenType} ≈ ${exchangeRates[tokenType].toLocaleString()}

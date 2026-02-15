@@ -61,7 +61,7 @@ Top 10 freelancers by completion count receive:
 
 ---
 
-## **🛡️ Integrity Measures (Anti-Gaming)**
 
+## **🛡️ Integrity Measures (Anti-Gaming)**
 1. **Unique Client Check**: Multiple completed projects from the same "Client" wallet are audited to prevent artificial count inflation.
 2. **Wash Trading Check**: Abnormal funding cycles between linked wallets result in disqualification from the leaderboard.

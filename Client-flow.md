@@ -17,3 +17,4 @@
 4. WORK BEGINS
    ↓ Freelancer sees project in their dashboard
    ↓ Milestone releases happen on-chain
+5. Can raise dispute

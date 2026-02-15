@@ -50,7 +50,7 @@ clarinet deployments apply --manifest ./deployments/default.testnet-plan.yaml
 
 Required in `.env`:
 ```env
-DATABASE_URL=postgresql://user:pass@host:port/database
+DATABASE_URL=mysql://root:pass@localhost:3306/database
 SESSION_SECRET=your-secret-key-min-32-chars
 ```
 

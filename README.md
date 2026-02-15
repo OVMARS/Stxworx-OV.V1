@@ -48,7 +48,7 @@ npm run dev
 
 ### Backend
 - **Express.js** server with TypeScript
-- **PostgreSQL** database (Neon serverless)
+- **MySQL** database
 - **Drizzle ORM** for type-safe database queries
 - **Express Session** for authentication
 
@@ -73,9 +73,9 @@ Before you begin, ensure you have the following installed:
    npm --version
    ```
 
-3. **PostgreSQL** (v14 or higher)
-   - For local development: [Download PostgreSQL](https://www.postgresql.org/download/)
-   - Or use [Neon](https://neon.tech) for serverless PostgreSQL
+3. **MySQL** (v8.0 or higher)
+   - For local development: [Download MySQL](https://dev.mysql.com/downloads/mysql/)
+   - Or use a cloud MySQL provider (PlanetScale, Aiven, etc.)
 
 4. **Clarinet** (for smart contract development)
    ```bash
@@ -116,13 +116,13 @@ npm install
 
 ### Step 3: Database Setup
 
-#### Option A: Local PostgreSQL
+#### Option A: Local MySQL
 
 1. Create a database:
    ```bash
-   psql -U postgres
+   mysql -u root -p
    CREATE DATABASE stx_freelance;
-   \q
+   exit
    ```
 
 2. Create `.env` file:
@@ -132,18 +132,17 @@ npm install
 
 3. Update `.env` with your database credentials:
    ```env
-   DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/stx_freelance
+   DATABASE_URL=mysql://root:yourpassword@localhost:3306/stx_freelance
    SESSION_SECRET=your-random-secret-key-here-min-32-chars
    ```
 
-#### Option B: Neon (Cloud PostgreSQL)
+#### Option B: Cloud MySQL (PlanetScale, Aiven, etc.)
 
-1. Sign up at [neon.tech](https://neon.tech)
-2. Create a new project
-3. Copy the connection string
-4. Update `.env`:
+1. Provision a MySQL database on your chosen provider.
+2. Copy the connection string (URI format).
+3. Update `.env`:
    ```env
-   DATABASE_URL=postgresql://user:pass@region.neon.tech/dbname?sslmode=require
+   DATABASE_URL=mysql://user:pass@host:3306/dbname
    SESSION_SECRET=your-random-secret-key-here-min-32-chars
    ```
 
@@ -471,7 +470,7 @@ Create a `.env` file in the root directory:
 
 ```env
 # Database (Required)
-DATABASE_URL=postgresql://user:password@host:port/database
+DATABASE_URL=mysql://user:password@host:3306/database
 
 # Session Secret (Required)
 # Generate a secure random string (min 32 characters)
@@ -526,7 +525,7 @@ clarinet console
 ### Issue: "Database connection failed"
 **Solution**: 
 - Verify `DATABASE_URL` in `.env` is correct
-- Ensure PostgreSQL is running
+- Ensure MySQL is running
 - Check network connectivity to database
 
 ### Issue: "Contract not found"
@@ -650,7 +649,7 @@ Built with:
 - Stacks Blockchain
 - Hiro Tools & Platform
 - React & Vite
-- PostgreSQL & Drizzle ORM
+- MySQL & Drizzle ORM
 - Tailwind CSS & Radix UI
 
 ---
