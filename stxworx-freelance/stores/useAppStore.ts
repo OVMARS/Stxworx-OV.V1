@@ -13,6 +13,8 @@ import {
   connectX,
   generateId,
 } from '../services/StacksService';
+import { api, type AuthUser } from '../lib/api';
+import { requestSignMessage, getUserAddress } from '../lib/stacks';
 
 const ROLE_STORAGE_KEY = 'stxworx_user_role';
 const APPLICATIONS_STORAGE_KEY = 'stxworx_applications';
@@ -40,10 +42,12 @@ interface AppState {
   activeChatContact: ChatContact | null;
   applications: Application[];
   freelancerDashboardTab: 'applied' | 'active' | 'completed' | 'earnings' | 'nft';
+  authUser: AuthUser | null;
+  isAuthChecking: boolean;
 
   // Actions
   init: () => Promise<void>;
-  syncWallet: (isSignedIn: boolean, userAddress: string | null) => void;
+  syncWallet: (isSignedIn: boolean, userAddress: string | null) => Promise<void>;
   setSearchTerm: (term: string) => void;
   setSelectedCategory: (cat: string) => void;
   setFreelancerTab: (tab: 'active' | 'leaderboard') => void;
@@ -58,6 +62,8 @@ interface AppState {
   setShowRoleModal: (show: boolean) => void;
   clearRole: () => void;
 
+  verifyAndLogin: (role: 'client' | 'freelancer') => Promise<AuthUser>;
+  logoutUser: () => Promise<void>;
   applyToProject: (project: Project, coverLetter?: string) => void;
   updateApplicationStatus: (applicationId: string, status: ApplicationStatus) => void;
   setFreelancerDashboardTab: (tab: 'applied' | 'active' | 'completed' | 'earnings' | 'nft') => void;
@@ -101,6 +107,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeChatContact: null,
   applications: JSON.parse(localStorage.getItem(APPLICATIONS_STORAGE_KEY) || '[]'),
   freelancerDashboardTab: 'applied',
+  authUser: null,
+  isAuthChecking: false,
 
   init: async () => {
     const [storedProjects, fetchedGigs, fetchedLeaderboard] = await Promise.all([
@@ -117,15 +125,34 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
-  syncWallet: (isSignedIn, userAddress) => {
+  syncWallet: async (isSignedIn, userAddress) => {
     if (isSignedIn && userAddress) {
-      const savedRole = localStorage.getItem(ROLE_STORAGE_KEY) as UserRole;
       set((s) => ({
         wallet: { ...s.wallet, isConnected: true, address: userAddress },
-        userRole: savedRole || s.userRole,
-        showRoleModal: !savedRole && !s.userRole,
+        isAuthChecking: true,
       }));
 
+      // Check for existing backend session
+      try {
+        const { user } = await api.auth.me();
+        localStorage.setItem(ROLE_STORAGE_KEY, user.role);
+        set({
+          authUser: user,
+          userRole: user.role as UserRole,
+          showRoleModal: false,
+          isAuthChecking: false,
+        });
+      } catch {
+        // No valid session — check localStorage cache or show role modal
+        const savedRole = localStorage.getItem(ROLE_STORAGE_KEY) as UserRole;
+        set({
+          userRole: savedRole || null,
+          showRoleModal: !savedRole,
+          isAuthChecking: false,
+        });
+      }
+
+      // Fetch profile + balances in parallel (non-blocking)
       fetchFreelancerByAddress(userAddress, 'You').then((profile) => {
         set({ currentUserProfile: profile });
       });
@@ -150,6 +177,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           balanceSBTC: 0,
         },
         currentUserProfile: null,
+        authUser: null,
         userRole: null,
         showRoleModal: false,
       });
@@ -215,6 +243,37 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   incrementBlock: () => set((s) => ({ currentBlock: s.currentBlock + 1 })),
+
+  verifyAndLogin: async (role) => {
+    const address = get().wallet.address;
+    if (!address) throw new Error('Wallet not connected');
+
+    const message = `Sign in to STXWorx\nAddress: ${address}\nTimestamp: ${Date.now()}`;
+
+    const { signature, publicKey } = await requestSignMessage(message);
+
+    const { user } = await api.auth.verifyWallet({
+      stxAddress: address,
+      publicKey,
+      signature,
+      message,
+      role,
+    });
+
+    localStorage.setItem(ROLE_STORAGE_KEY, user.role);
+    set({ authUser: user, userRole: user.role as UserRole, showRoleModal: false });
+    return user;
+  },
+
+  logoutUser: async () => {
+    try { await api.auth.logout(); } catch {}
+    localStorage.removeItem(ROLE_STORAGE_KEY);
+    set({
+      authUser: null,
+      userRole: null,
+      showRoleModal: false,
+    });
+  },
 
   setFreelancerDashboardTab: (tab) => set({ freelancerDashboardTab: tab }),
 
