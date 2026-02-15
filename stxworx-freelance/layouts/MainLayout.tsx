@@ -32,6 +32,16 @@ const MainLayout: React.FC = () => {
     syncWallet(isSignedIn, userAddress);
   }, [isSignedIn, userAddress]);
 
+  // Auto-navigate to saved role dashboard on reconnect
+  useEffect(() => {
+    if (wallet.isConnected && userRole && !showRoleModal) {
+      const target = userRole === 'client' ? '/client' : '/freelancer';
+      if (location.pathname === '/') {
+        navigate(target);
+      }
+    }
+  }, [wallet.isConnected, userRole, showRoleModal]);
+
   const handleConnect = async () => {
     try {
       setIsProcessing(true);
@@ -44,6 +54,7 @@ const MainLayout: React.FC = () => {
   };
 
   const handleDisconnect = () => {
+    localStorage.removeItem('stxworx_user_role');
     disconnect();
     navigate('/');
   };
@@ -130,7 +141,7 @@ const MainLayout: React.FC = () => {
         onCloseExternal={() => setActiveChatContact(null)}
       />
 
-      <RoleSelectModal open={showRoleModal} onSelect={handleRoleSelect} />
+      <RoleSelectModal open={showRoleModal} onSelect={handleRoleSelect} onClose={handleDisconnect} />
     </div>
   );
 };
