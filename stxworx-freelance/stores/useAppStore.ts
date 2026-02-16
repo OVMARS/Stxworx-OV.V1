@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Project, Gig, FreelancerProfile, WalletState, ChatContact, UserRole, Application, ApplicationStatus, Proposal, ProposalStatus } from '../types';
+import { Project, Gig, FreelancerProfile, WalletState, ChatContact, UserRole, Application, ApplicationStatus, Proposal, ProposalStatus, Milestone } from '../types';
 import {
   fetchGigs,
   fetchLeaderboard,
@@ -8,12 +8,28 @@ import {
   connectX,
   generateId,
 } from '../services/StacksService';
-import { api } from '../lib/api';
+import {
+  api,
+  mapBackendProject,
+  type BackendProject,
+  type BackendUser,
+  type BackendMilestoneSubmission,
+  type BackendDispute,
+  type BackendReview,
+  type BackendNFT,
+  type BackendProposal,
+  type Category,
+  type AuthUser,
+  type AdminAuthUser,
+  type AdminDashboardStats,
+} from '../lib/api';
 import { requestSignMessage } from '../lib/stacks';
 
 const ROLE_KEY_PREFIX = 'stxworx_role_';
 const roleKeyFor = (address: string) => `${ROLE_KEY_PREFIX}${address}`;
 const APPLICATIONS_STORAGE_KEY = 'stxworx_applications';
+
+// mapBackendProject is now exported from lib/api.ts
 
 interface AppState {
   categories: Category[];
@@ -82,6 +98,19 @@ interface AppState {
   withdrawProposal: (proposalId: number) => Promise<void>;
   acceptProposal: (proposalId: number) => Promise<void>;
   rejectProposal: (proposalId: number) => Promise<void>;
+
+  // Data-fetching actions
+  fetchCategories: () => Promise<void>;
+  fetchProjects: () => Promise<void>;
+  fetchMyProjects: () => Promise<void>;
+  fetchMyProposals: () => Promise<void>;
+  fetchProjectProposals: (projectId: number) => Promise<void>;
+  fetchMilestoneSubmissions: (projectId: number) => Promise<void>;
+  fetchProjectDisputes: (projectId: number) => Promise<void>;
+  fetchProfileReviews: (address: string) => Promise<void>;
+  createDispute: (data: { projectId: number; milestoneNum: number; reason: string; evidenceUrl?: string; disputeTxId?: string }) => Promise<void>;
+  createReview: (data: { projectId: number; revieweeId: number; rating: number; comment?: string }) => Promise<void>;
+
   /** @deprecated — use applyToProject (API-backed) instead */
   updateApplicationStatus: (applicationId: string, status: ApplicationStatus) => void;
   hasAppliedToProject: (projectId: string) => boolean;
@@ -453,7 +482,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const message = `Sign in to STXWorx\nAddress: ${address}\nTimestamp: ${Date.now()}`;
 
-    const { signature, publicKey } = await requestSignMessage(message);
+    const signResult = await requestSignMessage(message);
+    if (!signResult) throw new Error('SIGN_CANCELLED');
+    const { signature, publicKey } = signResult;
 
     const { user } = await api.auth.verifyWallet({
       stxAddress: address,
@@ -463,14 +494,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       role,
     });
 
-    localStorage.setItem(ROLE_STORAGE_KEY, user.role);
+    localStorage.setItem(roleKeyFor(address), user.role);
     set({ authUser: user, userRole: user.role as UserRole, showRoleModal: false });
     return user;
   },
 
   logoutUser: async () => {
     try { await api.auth.logout(); } catch {}
-    localStorage.removeItem(ROLE_STORAGE_KEY);
+    const addr = get().wallet.address;
+    if (addr) localStorage.removeItem(roleKeyFor(addr));
     set({
       authUser: null,
       userRole: null,

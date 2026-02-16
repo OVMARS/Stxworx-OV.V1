@@ -23,6 +23,7 @@ const FreelancerPage: React.FC = () => {
     myActiveProjects, wallet, currentUserProfile, leaderboardData, projects,
     freelancerDashboardTab, setFreelancerDashboardTab, isProcessing,
     handleProjectAction, applications, updateApplicationStatus,
+    fetchMyProjects, fetchMyProposals, myProposals, withdrawProposal,
   } = useAppStore();
 
   useEffect(() => {
