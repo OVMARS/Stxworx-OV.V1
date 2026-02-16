@@ -6,7 +6,6 @@ import { api } from '../lib/api';
 import Navbar from '../components/Navbar';
 import RoleSelectModal from '../components/RoleSelectModal';
 import CreateProjectModal from '../components/CreateProjectModal';
-import CreateGigModal from '../components/CreateGigModal';
 import ChatWidget from '../components/ChatWidget';
 
 const MainLayout: React.FC = () => {
@@ -15,13 +14,13 @@ const MainLayout: React.FC = () => {
   const location = useLocation();
 
   const {
-    wallet, searchTerm, isModalOpen, isGigModalOpen,
+    wallet, searchTerm, isModalOpen,
     modalInitialData, activeChatContact, isProcessing,
     userRole, showRoleModal, isAuthChecking,
     init, syncWallet, setSearchTerm, setIsModalOpen,
-    setIsGigModalOpen, setActiveChatContact, setIsProcessing,
+    setActiveChatContact, setIsProcessing,
     setUserRole, verifyAndLogin, logoutUser,
-    handleCreateProject, handleCreateGig, incrementBlock,
+    handleCreateProject, incrementBlock,
   } = useAppStore();
 
   useEffect(() => {
@@ -69,7 +68,6 @@ const MainLayout: React.FC = () => {
     if (p === '/client') return 'client';
     if (p === '/freelancer') return 'freelancer';
     if (p === '/profile') return 'profile';
-    if (p === '/gig') return 'gig-details';
     if (p === '/edit-profile') return 'edit-profile';
     if (p === '/admin') return 'admin-login';
     if (p === '/admin/dashboard') return 'admin-dashboard';
@@ -83,7 +81,6 @@ const MainLayout: React.FC = () => {
       client: '/client',
       freelancer: '/freelancer',
       profile: '/profile',
-      'gig-details': '/gig',
       'edit-profile': '/edit-profile',
       'admin-login': '/admin',
       'admin-dashboard': '/admin/dashboard',
@@ -141,12 +138,6 @@ const MainLayout: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleCreateProject}
         initialData={modalInitialData}
-      />
-
-      <CreateGigModal
-        isOpen={isGigModalOpen}
-        onClose={() => setIsGigModalOpen(false)}
-        onSubmit={handleCreateGig}
       />
 
       <ChatWidget

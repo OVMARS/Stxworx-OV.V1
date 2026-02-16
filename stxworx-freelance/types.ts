@@ -1,7 +1,7 @@
 
 export type UserRole = 'client' | 'freelancer' | 'admin' | null;
 
-export type ViewType = 'home' | 'client' | 'freelancer' | 'browse' | 'profile' | 'gig-details' | 'edit-profile' | 'admin-login' | 'admin-dashboard';
+export type ViewType = 'home' | 'client' | 'freelancer' | 'browse' | 'profile' | 'edit-profile' | 'admin-login' | 'admin-dashboard';
 
 export type TokenType = 'STX' | 'sBTC';
 
@@ -32,9 +32,11 @@ export interface Proposal {
   status: ProposalStatus;
   createdAt: string;
   updatedAt: string;
+  // Enriched by backend join on getByProject
+  freelancerAddress?: string;
+  freelancerUsername?: string | null;
   // Enriched on the frontend after fetching
   project?: Project;
-  freelancerAddress?: string;
 }
 
 export type MessageType = 'text' | 'audio' | 'file' | 'offer';
@@ -95,23 +97,6 @@ export interface Project {
   status?: 'open' | 'active' | 'completed' | 'disputed' | 'cancelled' | 'refunded';
 }
 
-export interface Gig {
-  id: string;
-  freelancerName: string;
-  freelancerAddress: string;
-  title: string;
-  description: string;
-  fullDescription?: string; 
-  deliveryTime?: number; 
-  category: string;
-  price: number;
-  rating: number;
-  reviews: number;
-  imageUrl: string;
-  tags: string[];
-  isVerified?: boolean; 
-}
-
 export interface FreelancerProfile {
   rank: number;
   name: string;
@@ -168,7 +153,7 @@ export interface SupportTicket {
 
 export interface ApprovalItem {
   id: string;
-  type: 'Gig' | 'Profile' | 'KYC';
+  type: 'Profile' | 'KYC';
   requesterName: string;
   details: string;
   date: string;

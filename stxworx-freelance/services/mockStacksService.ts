@@ -1,5 +1,5 @@
 
-import { Project, TokenType, Gig, FreelancerProfile, ChatContact, Message, AdminUser, SupportTicket, ApprovalItem, NFTDrop, AdminConversation } from '../types';
+import { Project, TokenType, FreelancerProfile, ChatContact, Message, AdminUser, SupportTicket, ApprovalItem, NFTDrop, AdminConversation } from '../types';
 
 
 // Constants for storage keys
@@ -218,48 +218,6 @@ export const adminForceReleaseMilestone = async (projectId: string, milestoneId:
 
 export const generateId = () => Math.random().toString(36).substring(2, 11);
 
-// --- Gig Services (Browse) ---
-
-export const MOCK_GIGS: Gig[] = [
-  {
-    id: 'g1',
-    freelancerName: 'SatoshiDesign',
-    freelancerAddress: 'SP3DX394KY8X23M1F3K8K3J29X47R910Q',
-    title: 'Professional DeFi Dashboard Design',
-    description: 'I will design a modern, responsive DeFi dashboard for your Stacks project.',
-    category: 'Design',
-    price: 1500,
-    rating: 5.0,
-    reviews: 12,
-    imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500',
-    tags: ['UI/UX', 'Figma', 'DeFi']
-  },
-  {
-    id: 'g2',
-    freelancerName: 'ClarityKing',
-    freelancerAddress: 'SP1...B22',
-    title: 'Smart Contract Audit & Optimization',
-    description: 'Expert Clarity smart contract auditing and gas optimization services.',
-    category: 'Smart Contracts',
-    price: 2500,
-    rating: 4.9,
-    reviews: 8,
-    imageUrl: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=500',
-    tags: ['Clarity', 'Security', 'Audit']
-  }
-];
-
-export const fetchGigs = async (): Promise<Gig[]> => {
-  await delay(600);
-  return MOCK_GIGS;
-};
-
-export const createGigService = async (gig: Gig): Promise<boolean> => {
-  await delay(1500);
-  MOCK_GIGS.unshift(gig);
-  return true;
-};
-
 // --- Leaderboard & Profile Services ---
 
 const MOCK_LEADERBOARD: FreelancerProfile[] = [
@@ -372,24 +330,21 @@ export const fetchFreelancerByAddress = async (address: string, name?: string): 
   const found = MOCK_LEADERBOARD.find(f => f.address === address || (address.length > 5 && f.address.includes(address.slice(0, 5))));
   if (found) return found;
 
-  // Try to find in gigs for fallback data
-  const gigInfo = MOCK_GIGS.find(g => g.freelancerAddress === address);
-
   // Return a generated profile
   return {
     rank: 99,
-    name: name || gigInfo?.freelancerName || 'Freelancer',
+    name: name || 'Freelancer',
     address: address,
     avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${address}`,
-    totalEarnings: gigInfo ? gigInfo.price * gigInfo.reviews : 0,
-    jobsCompleted: gigInfo ? gigInfo.reviews : 0,
-    rating: gigInfo ? gigInfo.rating : 4.5,
-    specialty: gigInfo ? gigInfo.category : 'Generalist',
-    badges: gigInfo && gigInfo.rating >= 4.9 ? ['Top Rated'] : [],
-    about: gigInfo ? `Professional freelancer specializing in ${gigInfo.category}. Committed to delivering high-quality results on the Stacks blockchain.` : 'Blockchain freelancer available for hire.',
-    portfolio: gigInfo ? [gigInfo.imageUrl] : [],
-    isIdVerified: gigInfo?.isVerified || false,
-    isSkillVerified: gigInfo?.isVerified || false,
+    totalEarnings: 0,
+    jobsCompleted: 0,
+    rating: 4.5,
+    specialty: 'Generalist',
+    badges: [],
+    about: 'Blockchain freelancer available for hire.',
+    portfolio: [],
+    isIdVerified: false,
+    isSkillVerified: false,
     isPortfolioVerified: false
   };
 };
@@ -489,7 +444,6 @@ export const MOCK_ADMIN_TICKETS: SupportTicket[] = [
 ];
 
 export const MOCK_ADMIN_APPROVALS: ApprovalItem[] = [
-  { id: 'a1', type: 'Gig', requesterName: 'SatoshiDesign', details: 'New Gig: Advanced UI Kit', date: '2024-05-21', status: 'Pending' },
   { id: 'a2', type: 'Profile', requesterName: 'NewUser123', details: 'ID Verification Documents', date: '2024-05-20', status: 'Pending' },
   { id: 'a3', type: 'KYC', requesterName: 'EnterpriseCorp', details: 'Corporate Verification', date: '2024-05-18', status: 'Approved' },
 ];

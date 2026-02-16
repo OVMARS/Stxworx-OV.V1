@@ -99,7 +99,7 @@ const Navbar: React.FC<NavbarProps> = ({ wallet, userRole, onConnect, onDisconne
                 <input
                   type="text"
                   className="block w-full pl-10 pr-3 py-2 bg-[#0a0f1e]/50 border border-white/10 rounded-xl text-slate-200 text-sm placeholder-slate-500 focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/50 transition-all shadow-inner"
-                  placeholder="Search gigs, skills, or tags..."
+                  placeholder="Search projects, skills, or tags..."
                   value={searchTerm}
                   onChange={(e) => onSearchChange(e.target.value)}
                 />
@@ -109,7 +109,7 @@ const Navbar: React.FC<NavbarProps> = ({ wallet, userRole, onConnect, onDisconne
           <div className="hidden md:flex items-center gap-2 shrink-0">
             <div className="flex items-center bg-[#0a0f1e]/50 rounded-full px-2 py-1 border border-white/5 mr-4 backdrop-blur-sm">
                <NavLink view="home" label="Home" />
-               <NavLink view="browse" label="Browse Gigs" />
+               <NavLink view="browse" label="Marketplace" />
                {wallet.isConnected && userRole === 'client' && (
                  <NavLink view="client" label="Client" />
                )}
@@ -202,7 +202,7 @@ const Navbar: React.FC<NavbarProps> = ({ wallet, userRole, onConnect, onDisconne
               <input
                 type="text"
                 className="block w-full pl-10 pr-3 py-3 bg-[#0a0f1e] border border-slate-700 rounded-xl text-slate-200 text-base focus:outline-none focus:border-orange-500 transition-colors"
-                placeholder="Search gigs..."
+                placeholder="Search projects..."
                 value={searchTerm}
                 onChange={(e) => {
                    onSearchChange(e.target.value);
@@ -213,7 +213,7 @@ const Navbar: React.FC<NavbarProps> = ({ wallet, userRole, onConnect, onDisconne
            {/* Mobile Navigation Links */}
            <div className="space-y-2">
              <MobileMenuItem view="home" label="Home" active={currentView === 'home'} index={1} />
-             <MobileMenuItem view="browse" label="Browse Gigs" active={currentView === 'browse'} index={2} />
+             <MobileMenuItem view="browse" label="Marketplace" active={currentView === 'browse'} index={2} />
              {wallet.isConnected && userRole && (
                 <>
                   <div className={`h-px bg-slate-800/50 my-2 transition-all duration-500 delay-150 ${isMenuOpen ? 'opacity-100 width-full' : 'opacity-0 width-0'}`}></div>

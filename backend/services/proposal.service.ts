@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { proposals, projects } from "@shared/schema";
+import { proposals, projects, users } from "@shared/schema";
 import { eq, and, ne } from "drizzle-orm";
 
 export const proposalService = {
@@ -25,10 +25,22 @@ export const proposalService = {
   },
 
   async getByProject(projectId: number) {
-    return db
-      .select()
+    const rows = await db
+      .select({
+        id: proposals.id,
+        projectId: proposals.projectId,
+        freelancerId: proposals.freelancerId,
+        coverLetter: proposals.coverLetter,
+        status: proposals.status,
+        createdAt: proposals.createdAt,
+        updatedAt: proposals.updatedAt,
+        freelancerAddress: users.stxAddress,
+        freelancerUsername: users.username,
+      })
       .from(proposals)
+      .leftJoin(users, eq(proposals.freelancerId, users.id))
       .where(eq(proposals.projectId, projectId));
+    return rows;
   },
 
   async getByFreelancer(freelancerId: number) {

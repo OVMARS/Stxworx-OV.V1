@@ -1,37 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X, Coins, ChevronRight, ChevronLeft, Check, Lock,
-  Clock, DollarSign, ListOrdered, ShieldCheck,
+  DollarSign, ListOrdered, CheckCircle,
   Paperclip, FileText, Trash2,
 } from 'lucide-react';
 import { TokenType, Project } from '../types';
-import { usdToToken, EXCHANGE_RATES } from '../services/StacksService';
-import { useWallet } from './wallet/WalletProvider';
+import { EXCHANGE_RATES } from '../services/StacksService';
 import { useAppStore } from '../stores/useAppStore';
 
 interface CreateProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: any) => void;
-  initialData?: Partial<Project> & { freelancerAddress?: string; totalBudget?: number; category?: string; title?: string; description?: string } | null;
+  initialData?: Partial<Project> & { totalBudget?: number; category?: string; title?: string; description?: string } | null;
 }
 
 interface MilestoneData {
   title: string;
   description: string;
-  price: string;
-  deliveryDays: string;
 }
 
 const emptyMilestone = (): MilestoneData => ({
   title: '',
   description: '',
-  price: '',
-  deliveryDays: '7',
 });
 
 const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
-  const { userAddress } = useWallet();
   const storeCategories = useAppStore((s) => s.categories);
 
   const [step, setStep] = useState(0);
@@ -39,9 +33,9 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   const [milestoneCount, setMilestoneCount] = useState<number | null>(null);
   const [tokenType, setTokenType] = useState<TokenType>('STX');
   const [milestones, setMilestones] = useState<MilestoneData[]>([]);
+  const [totalPriceUSD, setTotalPriceUSD] = useState('');
   const [category, setCategory] = useState('Web Development');
   const [description, setDescription] = useState('');
-  const [freelancerAddress, setFreelancerAddress] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -70,7 +64,6 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
       setDescription(initialData.description || '');
       setCategory(initialData.category || 'Web Development');
       setTokenType(initialData.tokenType || 'STX');
-      setFreelancerAddress(initialData.freelancerAddress || '');
       setStep(0);
       setMilestoneCount(null);
       setMilestones([]);
@@ -88,8 +81,10 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   const isReviewStep = milestoneCount !== null && step === milestoneCount + 1;
   const currentMsIndex = step - 1;
 
-  const totalBudgetUSD = milestones.reduce((s, m) => s + Number(m.price), 0);
+  const totalBudgetUSD = Number(totalPriceUSD) || 0;
   const tokenAmount = totalBudgetUSD ? totalBudgetUSD / exchangeRates[tokenType] : 0;
+  const perMilestoneUSD = milestoneCount ? totalBudgetUSD / milestoneCount : 0;
+  const perMilestoneToken = milestoneCount ? tokenAmount / milestoneCount : 0;
 
   function resetForm() {
     setStep(0);
@@ -99,7 +94,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
     setMilestones([]);
     setCategory('Web Development');
     setDescription('');
-    setFreelancerAddress('');
+    setTotalPriceUSD('');
     setAttachments([]);
     setIsLoading(false);
   }
@@ -128,81 +123,46 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
 
   const removeAttachment = (index: number) => setAttachments((prev) => prev.filter((_, i) => i !== index));
 
-  const setupValid = projectTitle.trim().length > 0 && milestoneCount !== null;
+  const setupValid = projectTitle.trim().length > 0 && milestoneCount !== null && totalBudgetUSD > 0;
 
   const currentMsValid = isMilestoneStep && milestones[currentMsIndex]
     ? milestones[currentMsIndex].title.trim().length > 0
       && milestones[currentMsIndex].description.trim().length > 0
-      && Number(milestones[currentMsIndex].price) > 0
-      && Number(milestones[currentMsIndex].deliveryDays) > 0
     : false;
 
-  const reviewValid = freelancerAddress.trim().length > 0;
+  const reviewValid = description.trim().length > 0;
 
   const handleNext = () => { if (step < totalSteps - 1) setStep(step + 1); };
   const handleBack = () => { if (step > 0) setStep(step - 1); };
 
-  const handleDeploy = async () => {
+  const handleCreateProject = async () => {
     setIsLoading(true);
 
     const milestoneObjs = milestones.map((m, i) => ({
       id: i + 1,
       title: m.title,
       description: m.description,
-      amount: Number((Number(m.price) / exchangeRates[tokenType]).toFixed(6)),
-      deliveryDays: Number(m.deliveryDays),
+      amount: Number(perMilestoneToken.toFixed(6)),
       status: 'locked' as const,
     }));
 
     const projectData = {
-      freelancerAddress,
-      totalBudget: tokenAmount,
+      title: projectTitle,
+      description,
+      category,
       tokenType,
+      totalBudget: tokenAmount,
       milestones: milestoneObjs,
     };
 
     try {
-      const { createProjectContractCall, saveProjectToBackend } = await import('../lib/contracts');
-
-      await createProjectContractCall(
-        projectData,
-        async (txData) => {
-          console.log('Transaction sent:', txData);
-          try {
-            const backendData = {
-              title: projectTitle,
-              description,
-              category,
-              clientAddress: userAddress,
-              freelancerAddress,
-              totalBudget: tokenAmount,
-              tokenType,
-              milestones: milestoneObjs,
-            };
-            await saveProjectToBackend(txData.txId, backendData);
-            setIsLoading(false);
-            onSubmit({ ...backendData, txId: txData.txId });
-            handleClose();
-          } catch (backendError) {
-            console.error('Error saving to backend:', backendError);
-            setIsLoading(false);
-            alert('Project created on-chain but failed to save to database. Please contact support with TxID: ' + txData.txId);
-            handleClose();
-          }
-        },
-        () => {
-          console.log('Transaction canceled');
-          setIsLoading(false);
-        }
-      );
+      onSubmit(projectData);
+      handleClose();
     } catch (error: any) {
-      console.error('Error initiating contract call:', error);
+      console.error('Create project failed:', error);
+      alert('Failed to create project: ' + (error.message || 'Unknown error'));
+    } finally {
       setIsLoading(false);
-      if (error.message && (error.message.includes('Buffer') || error.message.includes('global'))) {
-        alert('System Error: Missing blockchain dependencies (Buffer/global). Please contact support.');
-      } else {
-        alert('Failed to initiate contract call: ' + (error.message || 'Unknown error'));
-      }
     }
   };
 
@@ -289,6 +249,29 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                 </p>
               </div>
 
+              {/* Total Budget */}
+              <div>
+                <label className={labelClass}>Total Budget (USD)</label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-slate-600" />
+                  <input
+                    type="number"
+                    min="1"
+                    step="10"
+                    className={`${inputClass} pl-9 font-mono`}
+                    placeholder="0.00"
+                    value={totalPriceUSD}
+                    onChange={(e) => setTotalPriceUSD(e.target.value)}
+                  />
+                </div>
+                {totalBudgetUSD > 0 && (
+                  <p className="text-[10px] text-slate-600 mt-1 text-right">
+                    ≈ {tokenAmount.toFixed(4)} {tokenType}
+                    <span className="text-slate-700 ml-1">(10% platform fee deducted by smart contract)</span>
+                  </p>
+                )}
+              </div>
+
               <div>
                 <label className={labelClass}>Number of Milestones</label>
                 <div className="grid grid-cols-3 gap-3 mt-1">
@@ -354,38 +337,19 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelClass}>Budget (USD)</label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-slate-600" />
-                    <input
-                      type="number"
-                      min="1"
-                      step="5"
-                      className={`${inputClass} pl-9 font-mono`}
-                      placeholder="0.00"
-                      value={milestones[currentMsIndex].price}
-                      onChange={(e) => updateMilestone(currentMsIndex, 'price', e.target.value)}
-                    />
-                  </div>
-                  <p className="text-[10px] text-slate-600 mt-1 text-right">
-                    ≈ {(Number(milestones[currentMsIndex].price || 0) / exchangeRates[tokenType]).toFixed(4)} {tokenType}
-                  </p>
+              {/* Auto-calculated split (read-only) */}
+              <div className="bg-[#020617] rounded-xl border border-slate-800/60 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Lock className="w-3 h-3 text-orange-500" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Milestone Budget (auto-split)</span>
                 </div>
-                <div>
-                  <label className={labelClass}>Delivery (Days)</label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-2.5 h-4 w-4 text-slate-600" />
-                    <input
-                      type="number"
-                      min="1"
-                      className={`${inputClass} pl-9`}
-                      value={milestones[currentMsIndex].deliveryDays}
-                      onChange={(e) => updateMilestone(currentMsIndex, 'deliveryDays', e.target.value)}
-                    />
-                  </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl font-mono font-black text-orange-400">${perMilestoneUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span className="text-xs text-slate-500">≈ {perMilestoneToken.toFixed(4)} {tokenType}</span>
                 </div>
+                <p className="text-[10px] text-slate-600 mt-1">
+                  Equal split: ${totalBudgetUSD.toLocaleString()} total ÷ {milestoneCount} milestones
+                </p>
               </div>
             </div>
           )}
@@ -413,8 +377,8 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                         <p className="text-xs text-slate-500 truncate">{m.description}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-sm font-mono font-bold text-orange-400">${Number(m.price).toLocaleString()}</p>
-                        <p className="text-[10px] text-slate-500">{(Number(m.price) / exchangeRates[tokenType]).toFixed(4)} {tokenType} · {m.deliveryDays}d</p>
+                        <p className="text-sm font-mono font-bold text-orange-400">${perMilestoneUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        <p className="text-[10px] text-slate-500">{perMilestoneToken.toFixed(4)} {tokenType}</p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-slate-700 group-hover:text-slate-400 transition-colors shrink-0" />
                     </button>
@@ -429,17 +393,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                 </div>
               </div>
 
-              {/* Freelancer address */}
-              <div>
-                <label className={labelClass}>Freelancer Address (STX)</label>
-                <input
-                  type="text"
-                  className={`${inputClass} font-mono text-xs`}
-                  placeholder="SP3..."
-                  value={freelancerAddress}
-                  onChange={(e) => setFreelancerAddress(e.target.value)}
-                />
-              </div>
+              {/* Freelancer address removed — freelancers apply via marketplace */}
 
               {/* Category */}
               <div>
@@ -539,14 +493,14 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
               <button
                 type="button"
                 disabled={!reviewValid || isLoading}
-                onClick={handleDeploy}
+                onClick={handleCreateProject}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-orange-600 text-white text-sm font-black uppercase tracking-wider hover:bg-orange-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:scale-[1.01]"
               >
                 {isLoading ? (
-                  <span className="animate-pulse">Processing...</span>
+                  <span className="animate-pulse">Creating...</span>
                 ) : (
                   <>
-                    <ShieldCheck className="w-5 h-5" /> Deploy Contract (${totalBudgetUSD.toLocaleString()})
+                    <CheckCircle className="w-5 h-5" /> Create Project (${totalBudgetUSD.toLocaleString()})
                   </>
                 )}
               </button>
@@ -555,7 +509,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
 
           {isReviewStep && (
             <p className="text-center text-[10px] text-slate-500 mt-3 font-mono">
-              By deploying, you agree to lock {tokenAmount.toFixed(4)} {tokenType} into the smart contract.
+              Your project will be posted to the marketplace. Escrow will be deployed when you accept a freelancer.
             </p>
           )}
         </div>

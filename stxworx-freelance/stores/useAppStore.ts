@@ -1,9 +1,7 @@
 import { create } from 'zustand';
-import { Project, Gig, FreelancerProfile, WalletState, ChatContact, UserRole, Application, ApplicationStatus, Proposal, ProposalStatus, Milestone } from '../types';
+import { Project, FreelancerProfile, WalletState, ChatContact, UserRole, Application, ApplicationStatus, Proposal, ProposalStatus, Milestone } from '../types';
 import {
-  fetchGigs,
   fetchLeaderboard,
-  createGigService,
   connectX,
   generateId,
 } from '../services/StacksService';
@@ -36,12 +34,9 @@ interface AppState {
   projects: Project[];
   myPostedProjects: Project[];
   myActiveProjects: Project[];
-  gigs: Gig[];
-  filteredGigs: Gig[];
   leaderboardData: FreelancerProfile[];
   currentUserProfile: FreelancerProfile | null;
   selectedProfile: FreelancerProfile | null;
-  selectedGig: Gig | null;
   wallet: WalletState;
   userRole: UserRole;
   showRoleModal: boolean;
@@ -52,7 +47,6 @@ interface AppState {
   isLoading: boolean;
   isProcessing: boolean;
   isModalOpen: boolean;
-  isGigModalOpen: boolean;
   modalInitialData: any;
   activeChatContact: ChatContact | null;
   /** @deprecated kept for backward compat — use myProposals instead */
@@ -82,9 +76,7 @@ interface AppState {
   setSelectedCategory: (cat: string) => void;
   setFreelancerTab: (tab: 'active' | 'leaderboard') => void;
   setSelectedProfile: (profile: FreelancerProfile | null) => void;
-  setSelectedGig: (gig: Gig | null) => void;
   setIsModalOpen: (open: boolean) => void;
-  setIsGigModalOpen: (open: boolean) => void;
   setModalInitialData: (data: any) => void;
   setActiveChatContact: (contact: ChatContact | null) => void;
   setIsProcessing: (val: boolean) => void;
@@ -116,12 +108,10 @@ interface AppState {
   hasAppliedToProject: (projectId: string) => boolean;
   setFreelancerDashboardTab: (tab: 'applied' | 'active' | 'completed' | 'earnings' | 'nft') => void;
   handleCreateProject: (data: any) => Promise<void>;
-  handleCreateGig: (data: any) => Promise<void>;
   handleProjectAction: (projectId: string, actionType: string, payload?: any) => Promise<void>;
   handleConnectX: () => Promise<void>;
   handleSaveProfile: (updatedProfile: FreelancerProfile) => Promise<void>;
   viewProfileByAddress: (address: string, name?: string) => Promise<FreelancerProfile>;
-  openHireModal: (gig: Gig) => void;
   incrementBlock: () => void;
 
   // Admin actions
@@ -146,12 +136,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   projects: [],
   myPostedProjects: [],
   myActiveProjects: [],
-  gigs: [],
-  filteredGigs: [],
   leaderboardData: [],
   currentUserProfile: null,
   selectedProfile: null,
-  selectedGig: null,
   wallet: {
     isConnected: false,
     address: null,
@@ -169,7 +156,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   isLoading: true,
   isProcessing: false,
   isModalOpen: false,
-  isGigModalOpen: false,
   modalInitialData: null,
   activeChatContact: null,
   applications: [],
@@ -311,16 +297,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   init: async () => {
-    const [, fetchedGigs, fetchedLeaderboard] = await Promise.all([
+    const [, fetchedLeaderboard] = await Promise.all([
       get().fetchProjects(),
-      fetchGigs(),
       fetchLeaderboard(),
       get().fetchCategories(),
       get().fetchMyProposals(),
     ]);
     set({
-      gigs: fetchedGigs,
-      filteredGigs: fetchedGigs,
       leaderboardData: fetchedLeaderboard,
       isLoading: false,
     });
@@ -336,20 +319,28 @@ export const useAppStore = create<AppState>((set, get) => ({
       try {
         const { user } = await api.auth.me();
         if (user.stxAddress === userAddress) {
-          // Valid session — use role from backend
+          // Valid session for THIS wallet — use role from backend
           localStorage.setItem(roleKeyFor(userAddress), user.role);
           set({ userRole: user.role as UserRole, showRoleModal: false });
         } else {
-          // Cookie is for a different address — ignore it
+          // Cookie belongs to a DIFFERENT wallet — clear stale session
+          await api.auth.logout().catch(() => {});
           throw new Error('address mismatch');
         }
       } catch {
-        // 2. No valid session — fall back to localStorage cache
-        const savedRole = localStorage.getItem(roleKeyFor(userAddress)) as UserRole;
-        if (savedRole) {
-          set({ userRole: savedRole, showRoleModal: false });
-        } else {
-          // 3. Completely new — show role picker
+        // 2. No valid session — check if this wallet exists in DB
+        try {
+          const backendUser = await api.users.getByAddress(userAddress);
+          // Wallet exists in DB — re-authenticate with their STORED role
+          try {
+            await get().verifyAndLogin(backendUser.role as 'client' | 'freelancer');
+          } catch {
+            // User cancelled signing — show role modal as fallback
+            set({ userRole: null, showRoleModal: true });
+          }
+        } catch {
+          // 3. Wallet NOT in DB — completely new user, show role picker
+          localStorage.removeItem(roleKeyFor(userAddress));
           set({ userRole: null, showRoleModal: true });
         }
       }
@@ -407,47 +398,15 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setSearchTerm: (term) => {
     set({ searchTerm: term });
-    const { gigs, selectedCategory } = get();
-    let result = gigs;
-    if (selectedCategory !== 'All') {
-      result = result.filter((g) => g.category === selectedCategory);
-    }
-    if (term) {
-      const lower = term.toLowerCase();
-      result = result.filter(
-        (g) =>
-          g.title.toLowerCase().includes(lower) ||
-          g.description.toLowerCase().includes(lower) ||
-          g.tags.some((t) => t.toLowerCase().includes(lower))
-      );
-    }
-    set({ filteredGigs: result });
   },
 
   setSelectedCategory: (cat) => {
     set({ selectedCategory: cat });
-    const { gigs, searchTerm } = get();
-    let result = gigs;
-    if (cat !== 'All') {
-      result = result.filter((g) => g.category === cat);
-    }
-    if (searchTerm) {
-      const lower = searchTerm.toLowerCase();
-      result = result.filter(
-        (g) =>
-          g.title.toLowerCase().includes(lower) ||
-          g.description.toLowerCase().includes(lower) ||
-          g.tags.some((t) => t.toLowerCase().includes(lower))
-      );
-    }
-    set({ filteredGigs: result });
   },
 
   setFreelancerTab: (tab) => set({ freelancerTab: tab }),
   setSelectedProfile: (profile) => set({ selectedProfile: profile }),
-  setSelectedGig: (gig) => set({ selectedGig: gig }),
   setIsModalOpen: (open) => set({ isModalOpen: open }),
-  setIsGigModalOpen: (open) => set({ isGigModalOpen: open }),
   setModalInitialData: (data) => set({ modalInitialData: data }),
   setActiveChatContact: (contact) => set({ activeChatContact: contact }),
   setIsProcessing: (val) => set({ isProcessing: val }),
@@ -485,9 +444,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Re-throw cancellation so callers can handle it
       if (err?.message === 'SIGN_CANCELLED') throw err;
       console.error('Backend auth failed:', err);
-      // Fallback: use client-side role so the UI doesn't get stuck
-      localStorage.setItem(roleKeyFor(addr), role as string);
-      set({ userRole: role, showRoleModal: false });
+      // Don't set role without a valid session — re-throw so UI shows the error
+      throw new Error('Backend authentication failed. Please try again.');
     }
   },
   setShowRoleModal: (show) => set({ showRoleModal: show }),
@@ -632,32 +590,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  handleCreateGig: async (data) => {
-    const { wallet, currentUserProfile } = get();
-    if (!wallet.address) return;
-    set({ isProcessing: true });
-
-    const newGig: Gig = {
-      id: generateId(),
-      freelancerName: currentUserProfile?.name || 'You',
-      freelancerAddress: wallet.address,
-      title: data.title,
-      description: data.description,
-      category: data.category,
-      price: data.price,
-      deliveryTime: data.deliveryTime,
-      rating: 0,
-      reviews: 0,
-      imageUrl: data.imageUrl,
-      tags: data.tags,
-      isVerified: currentUserProfile?.isIdVerified,
-    };
-
-    await createGigService(newGig);
-    const updatedGigs = await fetchGigs();
-    set({ gigs: updatedGigs, isProcessing: false, isGigModalOpen: false });
-  },
-
   handleProjectAction: async (projectId, actionType, payload) => {
     set({ isProcessing: true });
     try {
@@ -763,20 +695,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({ selectedProfile: fallback });
       return fallback;
     }
-  },
-
-  openHireModal: (gig) => {
-    set({
-      modalInitialData: {
-        title: `Contract: ${gig.title}`,
-        description: `Scope based on gig: ${gig.title}. \n\n${gig.description}`,
-        category: gig.category,
-        totalBudget: gig.price,
-        tokenType: 'STX',
-        freelancerAddress: gig.freelancerAddress,
-      },
-      isModalOpen: true,
-    });
   },
 
   // ─── Admin Actions ──────────────────────────────────────────

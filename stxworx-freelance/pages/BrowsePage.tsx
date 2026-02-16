@@ -1,48 +1,39 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
-import GigCard from '../components/GigCard';
-import { Search, Briefcase, Layers, Clock, DollarSign, Send, CheckCircle2, X } from 'lucide-react';
+import { Briefcase, Clock, DollarSign, Send, CheckCircle2, X, PlusCircle } from 'lucide-react';
 import { formatUSD, tokenToUsd } from '../services/StacksService';
 import { Project } from '../types';
 
-type BrowseTab = 'gigs' | 'projects';
-
 const BrowsePage: React.FC = () => {
   const navigate = useNavigate();
-  const [browseTab, setBrowseTab] = useState<BrowseTab>('gigs');
   const [applyTarget, setApplyTarget] = useState<Project | null>(null);
   const [coverLetter, setCoverLetter] = useState('');
   const [applyLoading, setApplyLoading] = useState(false);
   const {
-    filteredGigs, projects, selectedCategory, setSelectedCategory,
-    openHireModal, wallet, userRole, applyToProject, hasAppliedToProject,
-    categories, isProcessing,
+    projects, selectedCategory, setSelectedCategory, searchTerm,
+    wallet, userRole, applyToProject, hasAppliedToProject,
+    categories, setIsModalOpen,
   } = useAppStore();
 
   const CATEGORIES = ['All', ...categories.map((c) => c.name)];
 
   const openProjects = useMemo(() => {
-    let result = projects.filter((p) => !p.freelancerAddress || p.freelancerAddress === '');
+    let result = projects.filter((p) => p.status === 'open');
     if (selectedCategory !== 'All') {
       result = result.filter((p) => p.category === selectedCategory);
     }
+    if (searchTerm) {
+      const lower = searchTerm.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.title.toLowerCase().includes(lower) ||
+          p.description.toLowerCase().includes(lower) ||
+          p.category.toLowerCase().includes(lower)
+      );
+    }
     return result;
-  }, [projects, selectedCategory]);
-
-  const handleViewProfile = (address: string, name?: string) => {
-    useAppStore.getState().viewProfileByAddress(address, name).then(() => navigate('/profile'));
-  };
-
-  const handleHireGig = (gig: any) => {
-    if (!wallet.isConnected) return;
-    openHireModal(gig);
-  };
-
-  const handleViewDetails = (gig: any) => {
-    useAppStore.getState().setSelectedGig(gig);
-    navigate('/gig');
-  };
+  }, [projects, selectedCategory, searchTerm]);
 
   const handleApplyClick = (project: Project) => {
     if (!wallet.isConnected || hasAppliedToProject(project.id)) return;
@@ -59,16 +50,22 @@ const BrowsePage: React.FC = () => {
     setCoverLetter('');
   };
 
-  const itemCount = browseTab === 'gigs' ? filteredGigs.length : openProjects.length;
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
         <div>
-          <h2 className="text-3xl font-black text-white uppercase tracking-tight">Browse Marketplace</h2>
-          <p className="text-slate-400 text-sm mt-1">Found {itemCount} results</p>
+          <h2 className="text-3xl font-black text-white uppercase tracking-tight">Marketplace</h2>
+          <p className="text-slate-400 text-sm mt-1">Found {openProjects.length} open contracts</p>
         </div>
         <div className="flex items-center gap-4 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto">
+          {userRole === 'client' && wallet.isConnected && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="px-5 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-orange-900/20 flex items-center gap-2 transition-all hover:scale-105 text-xs whitespace-nowrap shrink-0"
+            >
+              <PlusCircle className="w-4 h-4" /> New Contract
+            </button>
+          )}
           <div className="flex bg-[#0b0f19] p-1 rounded-lg border border-slate-800">
             {CATEGORIES.map((cat) => (
               <button
@@ -87,47 +84,7 @@ const BrowsePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Tab toggle */}
-      <div className="flex gap-4 border-b border-slate-800 mb-8">
-        <button
-          onClick={() => setBrowseTab('gigs')}
-          className={`pb-3 text-sm font-bold uppercase tracking-wider transition-all border-b-2 flex items-center gap-2 ${
-            browseTab === 'gigs' ? 'text-white border-orange-500' : 'text-slate-500 border-transparent hover:text-slate-300'
-          }`}
-        >
-          <Layers className="w-4 h-4" /> Freelancer Gigs
-        </button>
-        <button
-          onClick={() => setBrowseTab('projects')}
-          className={`pb-3 text-sm font-bold uppercase tracking-wider transition-all border-b-2 flex items-center gap-2 ${
-            browseTab === 'projects' ? 'text-white border-orange-500' : 'text-slate-500 border-transparent hover:text-slate-300'
-          }`}
-        >
-          <Briefcase className="w-4 h-4" /> Client Projects
-        </button>
-      </div>
-
-      {browseTab === 'gigs' ? (
-        filteredGigs.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredGigs.map((gig) => (
-              <GigCard
-                key={gig.id}
-                gig={gig}
-                onHire={handleHireGig}
-                onViewProfile={handleViewProfile}
-                onViewDetails={handleViewDetails}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-            <Search className="w-16 h-16 mb-4 opacity-20" />
-            <p className="text-lg font-bold">No gigs found</p>
-            <p className="text-sm">Try adjusting your search or filters</p>
-          </div>
-        )
-      ) : openProjects.length > 0 ? (
+      {openProjects.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {openProjects.map((project) => {
             const applied = hasAppliedToProject(project.id);
@@ -197,10 +154,10 @@ const BrowsePage: React.FC = () => {
                     </button>
                   )}
 
-                  {userRole === 'client' && (
-                    <div className="text-xs text-slate-600 font-bold uppercase tracking-wider text-center mt-2">
-                      Your posted project
-                    </div>
+                  {!wallet.isConnected && (
+                    <p className="text-xs text-slate-600 text-center mt-2 font-bold uppercase tracking-wider">
+                      Connect wallet to apply
+                    </p>
                   )}
                 </div>
               </div>
@@ -211,7 +168,7 @@ const BrowsePage: React.FC = () => {
         <div className="flex flex-col items-center justify-center py-20 text-slate-500">
           <Briefcase className="w-16 h-16 mb-4 opacity-20" />
           <p className="text-lg font-bold">No open projects</p>
-          <p className="text-sm">Check back later for new client contracts</p>
+          <p className="text-sm">Check back later for new contracts</p>
         </div>
       )}
 

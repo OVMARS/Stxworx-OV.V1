@@ -16,7 +16,7 @@ const AdminApprovals: React.FC = () => {
          <div className="flex justify-between items-center">
             <div>
                <h2 className="text-2xl font-black text-white uppercase tracking-tight">Approvals</h2>
-               <p className="text-slate-400 text-sm">Review pending gigs, profiles, and KYC.</p>
+               <p className="text-slate-400 text-sm">Review pending profiles and KYC.</p>
             </div>
          </div>
 
@@ -24,8 +24,7 @@ const AdminApprovals: React.FC = () => {
             {approvals.filter(i => i.status === 'Pending').map((item) => (
                <div key={item.id} className="bg-[#0b0f19] rounded-xl border border-slate-800 p-6 shadow-lg hover:border-orange-500/30 transition-all">
                   <div className="flex justify-between items-start mb-4">
-                     <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${item.type === 'Gig' ? 'bg-purple-500/10 text-purple-500' :
-                        item.type === 'Profile' ? 'bg-blue-500/10 text-blue-500' :
+                     <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${item.type === 'Profile' ? 'bg-blue-500/10 text-blue-500' :
                            'bg-green-500/10 text-green-500'
                         }`}>
                         {item.type}

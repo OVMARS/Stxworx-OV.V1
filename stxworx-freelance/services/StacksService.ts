@@ -1,5 +1,5 @@
 
-import { Project, TokenType, Gig, FreelancerProfile, ChatContact, Message, AdminUser, SupportTicket, ApprovalItem, NFTDrop, AdminConversation } from '../types';
+import { Project, TokenType, FreelancerProfile, ChatContact, Message, AdminUser, SupportTicket, ApprovalItem, NFTDrop, AdminConversation } from '../types';
 
 /**
  * Service layer for interacting with Stacks blockchain, Backend API, and Off-chain data.
@@ -234,26 +234,6 @@ export const adminForceReleaseMilestone = async (projectId: string, milestoneId:
 };
 
 export const generateId = () => Math.random().toString(36).substring(2, 11);
-
-// --- Gig Services (Browse) ---
-
-export const fetchGigs = async (): Promise<Gig[]> => {
-    try {
-        const res = await fetch('http://localhost:3001/api/gigs');
-        if (!res.ok) throw new Error('Failed to fetch gigs');
-        const { data } = await res.json();
-        return data;
-    } catch (e) {
-        console.error(e);
-        return [];
-    }
-};
-
-export const createGigService = async (gig: Gig): Promise<boolean> => {
-    // In real app: POST /api/gigs
-    await delay(1500);
-    return true;
-};
 
 // --- Leaderboard & Profile Services ---
 

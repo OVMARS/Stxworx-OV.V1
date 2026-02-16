@@ -5,7 +5,7 @@ import FreelancerProfile from '../components/FreelancerProfile';
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const { selectedProfile, gigs, openHireModal, setActiveChatContact, wallet } = useAppStore();
+  const { selectedProfile, setActiveChatContact, wallet } = useAppStore();
 
   if (!selectedProfile) {
     navigate('/browse');
@@ -39,9 +39,7 @@ const ProfilePage: React.FC = () => {
   return (
     <FreelancerProfile
       profile={selectedProfile}
-      gigs={gigs}
       onBack={() => navigate(-1)}
-      onHire={openHireModal}
       onContact={handleContact}
     />
   );
