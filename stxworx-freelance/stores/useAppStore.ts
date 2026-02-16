@@ -319,20 +319,28 @@ export const useAppStore = create<AppState>((set, get) => ({
       try {
         const { user } = await api.auth.me();
         if (user.stxAddress === userAddress) {
-          // Valid session — use role from backend
+          // Valid session for THIS wallet — use role from backend
           localStorage.setItem(roleKeyFor(userAddress), user.role);
           set({ userRole: user.role as UserRole, showRoleModal: false });
         } else {
-          // Cookie is for a different address — ignore it
+          // Cookie belongs to a DIFFERENT wallet — clear stale session
+          await api.auth.logout().catch(() => {});
           throw new Error('address mismatch');
         }
       } catch {
-        // 2. No valid session — fall back to localStorage cache
-        const savedRole = localStorage.getItem(roleKeyFor(userAddress)) as UserRole;
-        if (savedRole) {
-          set({ userRole: savedRole, showRoleModal: false });
-        } else {
-          // 3. Completely new — show role picker
+        // 2. No valid session — check if this wallet exists in DB
+        try {
+          const backendUser = await api.users.getByAddress(userAddress);
+          // Wallet exists in DB — re-authenticate with their STORED role
+          try {
+            await get().verifyAndLogin(backendUser.role as 'client' | 'freelancer');
+          } catch {
+            // User cancelled signing — show role modal as fallback
+            set({ userRole: null, showRoleModal: true });
+          }
+        } catch {
+          // 3. Wallet NOT in DB — completely new user, show role picker
+          localStorage.removeItem(roleKeyFor(userAddress));
           set({ userRole: null, showRoleModal: true });
         }
       }
@@ -436,9 +444,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Re-throw cancellation so callers can handle it
       if (err?.message === 'SIGN_CANCELLED') throw err;
       console.error('Backend auth failed:', err);
-      // Fallback: use client-side role so the UI doesn't get stuck
-      localStorage.setItem(roleKeyFor(addr), role as string);
-      set({ userRole: role, showRoleModal: false });
+      // Don't set role without a valid session — re-throw so UI shows the error
+      throw new Error('Backend authentication failed. Please try again.');
     }
   },
   setShowRoleModal: (show) => set({ showRoleModal: show }),

@@ -37,7 +37,7 @@ export const authService = {
     let user;
 
     if (existingUser) {
-      // Existing user — ignore role field, use stored role
+      // Existing user — role is permanent, always use stored role
       user = existingUser;
     } else {
       // New user — create with chosen role
