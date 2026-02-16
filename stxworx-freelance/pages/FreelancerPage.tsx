@@ -171,7 +171,7 @@ const FreelancerPage: React.FC = () => {
             onClick={() => navigate('/browse')}
             className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold uppercase tracking-wider rounded-xl flex items-center gap-2 transition-all text-sm"
           >
-            <Briefcase className="w-4 h-4" /> Browse Projects
+            <Briefcase className="w-4 h-4" /> Marketplace
           </button>
 
         </div>

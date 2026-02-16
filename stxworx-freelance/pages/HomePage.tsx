@@ -64,7 +64,7 @@ const HomePage: React.FC = () => {
                 onClick={() => navigate('/browse')}
                 className="px-8 py-4 bg-white text-black font-black uppercase tracking-widest text-sm rounded hover:bg-orange-500 hover:text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(249,115,22,0.5)] transform hover:scale-105"
               >
-                Browse Gigs
+                Marketplace
               </button>
             </div>
           </div>
@@ -132,7 +132,7 @@ const HomePage: React.FC = () => {
                 <h3 className="text-xl font-bold text-white mb-2 relative z-10">{cat.name}</h3>
                 <p className="text-slate-500 text-xs mb-8 uppercase tracking-wide relative z-10">{cat.subcategories.join(', ')}</p>
                 <div className="flex justify-between items-center mt-auto pt-4 border-t border-white/5 relative z-10">
-                  <span className="text-xs text-slate-600 font-mono group-hover:text-slate-400 transition-colors">Browse &rarr;</span>
+                  <span className="text-xs text-slate-600 font-mono group-hover:text-slate-400 transition-colors">Marketplace &rarr;</span>
                   <span className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300">
                     <ArrowRight className="w-4 h-4" />
                   </span>
@@ -195,7 +195,7 @@ const HomePage: React.FC = () => {
                       <Zap className="w-6 h-6" />
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-blue-500 transition-colors">Freelancer Access</h3>
-                    <p className="text-slate-400 text-sm mb-6">Accept gigs & withdraw sBTC</p>
+                    <p className="text-slate-400 text-sm mb-6">Accept contracts & withdraw sBTC</p>
                   </div>
                   <div className="flex flex-col gap-3 mt-auto relative z-10">
                     <button
@@ -231,7 +231,7 @@ const HomePage: React.FC = () => {
               <h4 className="text-white font-bold uppercase tracking-wider text-xs mb-6 border-b border-orange-500/30 inline-block pb-1">Platform</h4>
               <ul className="space-y-3 text-slate-400 text-sm">
                 <li><button onClick={() => navigate('/')} className="hover:text-orange-500 transition-colors">Home</button></li>
-                <li><button onClick={() => navigate('/browse')} className="hover:text-orange-500 transition-colors">Browse Projects</button></li>
+                <li><button onClick={() => navigate('/browse')} className="hover:text-orange-500 transition-colors">Marketplace</button></li>
                 <li><button onClick={() => { navigate('/client'); window.scrollTo(0, 0); }} className="hover:text-orange-500 transition-colors">Client Dashboard</button></li>
                 <li><button onClick={() => { navigate('/freelancer'); window.scrollTo(0, 0); }} className="hover:text-orange-500 transition-colors">Freelancer Dashboard</button></li>
               </ul>

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FreelancerProfile as FreelancerProfileType, Gig } from '../types';
+import { FreelancerProfile as FreelancerProfileType } from '../types';
 import { ShieldCheck, Trophy, MapPin, Star, Calendar, ArrowLeft, Mail, ExternalLink, Briefcase, Coins, CheckCircle, Award, CheckCircle2, MessageSquare } from 'lucide-react';
 import { formatUSD } from '../services/StacksService';
 import { useAppStore } from '../stores/useAppStore';
@@ -8,13 +8,11 @@ import type { BackendReview } from '../lib/api';
 
 interface FreelancerProfileProps {
   profile: FreelancerProfileType;
-  gigs: Gig[]; // Pass gigs to show active listings
   onBack: () => void;
-  onHire: (gig: Gig) => void;
   onContact: (profile: FreelancerProfileType) => void;
 }
 
-const FreelancerProfile: React.FC<FreelancerProfileProps> = ({ profile, gigs, onBack, onHire, onContact }) => {
+const FreelancerProfile: React.FC<FreelancerProfileProps> = ({ profile, onBack, onContact }) => {
   const { profileReviews, fetchProfileReviews } = useAppStore();
 
   // Fetch real reviews for this profile
@@ -25,12 +23,6 @@ const FreelancerProfile: React.FC<FreelancerProfileProps> = ({ profile, gigs, on
   }, [profile.address]);
 
   const reviews = profileReviews[profile.address] || [];
-
-  // Filter gigs for this freelancer
-  const freelancerGigs = gigs.filter(g =>
-    g.freelancerAddress === profile.address ||
-    (profile.name === g.freelancerName)
-  );
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -128,7 +120,7 @@ const FreelancerProfile: React.FC<FreelancerProfileProps> = ({ profile, gigs, on
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Stats & About */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-3 space-y-8">
           {/* Stats Grid */}
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-[#0b0f19] p-5 rounded-xl border border-slate-800 flex flex-col items-center justify-center text-center">
@@ -222,36 +214,6 @@ const FreelancerProfile: React.FC<FreelancerProfileProps> = ({ profile, gigs, on
             ) : (
               <p className="text-slate-500 text-sm">No reviews yet.</p>
             )}
-          </div>
-        </div>
-
-        {/* Right Column: Active Gigs */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-24">
-            <h3 className="text-lg font-black text-white uppercase tracking-tight mb-4">Active Gigs</h3>
-            <div className="space-y-4">
-              {freelancerGigs.length > 0 ? (
-                freelancerGigs.map(gig => (
-                  <div key={gig.id} className="bg-[#0b0f19] p-4 rounded-xl border border-slate-800 hover:border-orange-500/30 transition-all group">
-                    <h4 className="font-bold text-white mb-2 line-clamp-2">{gig.title}</h4>
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="text-xs px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">{gig.category}</span>
-                      <span className="font-bold text-orange-500">{formatUSD(gig.price)}</span>
-                    </div>
-                    <button
-                      onClick={() => onHire(gig)}
-                      className="w-full py-2 bg-slate-800 hover:bg-orange-600 text-white text-xs font-bold uppercase tracking-wider rounded transition-colors"
-                    >
-                      Hire Now
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <div className="p-6 bg-[#0b0f19] rounded-xl border border-dashed border-slate-800 text-center">
-                  <p className="text-slate-500 text-sm">No active gigs listed.</p>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
