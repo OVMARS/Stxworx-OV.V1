@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { Project, FreelancerProfile, WalletState, ChatContact, UserRole, Application, ApplicationStatus, Proposal, ProposalStatus, Milestone } from '../types';
 import {
-  fetchLeaderboard,
   connectX,
   generateId,
 } from '../services/StacksService';
@@ -20,6 +19,7 @@ import {
   type AuthUser,
   type AdminAuthUser,
   type AdminDashboardStats,
+  type LeaderboardEntry,
 } from '../lib/api';
 import { requestSignMessage } from '../lib/stacks';
 
@@ -94,6 +94,7 @@ interface AppState {
   // Data-fetching actions
   fetchCategories: () => Promise<void>;
   fetchProjects: () => Promise<void>;
+  fetchLeaderboard: () => Promise<void>;
   fetchMyProjects: () => Promise<void>;
   fetchMyProposals: () => Promise<void>;
   fetchProjectProposals: (projectId: number) => Promise<void>;
@@ -296,17 +297,39 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
+  fetchLeaderboard: async () => {
+    try {
+      const entries = await api.users.leaderboard();
+      const profiles: FreelancerProfile[] = entries.map((e) => ({
+        rank: e.rank,
+        name: e.username || e.stxAddress.slice(0, 8),
+        address: e.stxAddress,
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${e.stxAddress}`,
+        totalEarnings: 0,
+        jobsCompleted: e.jobsCompleted,
+        rating: e.avgRating,
+        specialty: 'Generalist',
+        badges: [],
+        about: '',
+        portfolio: [],
+        isIdVerified: false,
+        isSkillVerified: false,
+        isPortfolioVerified: false,
+      }));
+      set({ leaderboardData: profiles });
+    } catch (e) {
+      console.error('Failed to fetch leaderboard:', e);
+    }
+  },
+
   init: async () => {
-    const [, fetchedLeaderboard] = await Promise.all([
+    await Promise.all([
       get().fetchProjects(),
-      fetchLeaderboard(),
+      get().fetchLeaderboard(),
       get().fetchCategories(),
       get().fetchMyProposals(),
     ]);
-    set({
-      leaderboardData: fetchedLeaderboard,
-      isLoading: false,
-    });
+    set({ isLoading: false });
   },
 
   syncWallet: async (isSignedIn, userAddress) => {

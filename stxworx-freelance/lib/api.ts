@@ -154,6 +154,17 @@ export interface AdminDashboardStats {
   openDisputes: number;
 }
 
+export interface LeaderboardEntry {
+  id: number;
+  stxAddress: string;
+  username: string | null;
+  jobsCompleted: number;
+  avgRating: number;
+  reviewCount: number;
+  rank: number;
+  createdAt: string;
+}
+
 /* ═══════════════════════════════════════════════════════
    HELPERS
    ═══════════════════════════════════════════════════════ */
@@ -254,6 +265,9 @@ export const api = {
 
     getReviews: (address: string) =>
       request<BackendReview[]>(`/users/${address}/reviews`),
+
+    leaderboard: () =>
+      request<LeaderboardEntry[]>('/users/leaderboard'),
   },
 
   /* ── Projects ── */

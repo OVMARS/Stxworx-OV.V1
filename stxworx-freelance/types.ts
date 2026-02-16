@@ -1,7 +1,7 @@
 
 export type UserRole = 'client' | 'freelancer' | 'admin' | null;
 
-export type ViewType = 'home' | 'client' | 'freelancer' | 'browse' | 'profile' | 'edit-profile' | 'admin-login' | 'admin-dashboard';
+export type ViewType = 'home' | 'client' | 'freelancer' | 'browse' | 'leaderboard' | 'profile' | 'edit-profile' | 'admin-login' | 'admin-dashboard';
 
 export type TokenType = 'STX' | 'sBTC';
 

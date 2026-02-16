@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Wallet, LogOut, Menu, X, Hexagon, Zap, Search, Twitter, ChevronRight } from 'lucide-react';
+import { Wallet, LogOut, Menu, X, Hexagon, Zap, Search, Twitter, ChevronRight, Trophy } from 'lucide-react';
 import { WalletState, ViewType, UserRole } from '../types';
 
 interface NavbarProps {
@@ -110,6 +110,7 @@ const Navbar: React.FC<NavbarProps> = ({ wallet, userRole, onConnect, onDisconne
             <div className="flex items-center bg-[#0a0f1e]/50 rounded-full px-2 py-1 border border-white/5 mr-4 backdrop-blur-sm">
                <NavLink view="home" label="Home" />
                <NavLink view="browse" label="Marketplace" />
+               <NavLink view="leaderboard" label="Leaderboard" />
                {wallet.isConnected && userRole === 'client' && (
                  <NavLink view="client" label="Client" />
                )}
@@ -214,14 +215,15 @@ const Navbar: React.FC<NavbarProps> = ({ wallet, userRole, onConnect, onDisconne
            <div className="space-y-2">
              <MobileMenuItem view="home" label="Home" active={currentView === 'home'} index={1} />
              <MobileMenuItem view="browse" label="Marketplace" active={currentView === 'browse'} index={2} />
+             <MobileMenuItem view="leaderboard" label="Leaderboard" active={currentView === 'leaderboard'} index={3} />
              {wallet.isConnected && userRole && (
                 <>
                   <div className={`h-px bg-slate-800/50 my-2 transition-all duration-500 delay-150 ${isMenuOpen ? 'opacity-100 width-full' : 'opacity-0 width-0'}`}></div>
                   {userRole === 'client' && (
-                    <MobileMenuItem view="client" label="Client Dashboard" active={currentView === 'client'} index={3} />
+                    <MobileMenuItem view="client" label="Client Dashboard" active={currentView === 'client'} index={4} />
                   )}
                   {userRole === 'freelancer' && (
-                    <MobileMenuItem view="freelancer" label="Freelancer Dashboard" active={currentView === 'freelancer'} index={4} />
+                    <MobileMenuItem view="freelancer" label="Freelancer Dashboard" active={currentView === 'freelancer'} index={5} />
                   )}
                 </>
              )}

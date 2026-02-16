@@ -10,6 +10,7 @@ import EditProfilePage from './pages/EditProfilePage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 
 const AnimationStyles = () => (
   <style>{`
@@ -77,6 +78,7 @@ const App: React.FC = () => (
           <Route path="/client" element={<ClientPage />} />
           <Route path="/client/project/:id" element={<ProjectDetailPage />} />
           <Route path="/freelancer" element={<FreelancerPage />} />
+          <Route path="/leaderboard" element={<LeaderboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/edit-profile" element={<EditProfilePage />} />
         </Route>

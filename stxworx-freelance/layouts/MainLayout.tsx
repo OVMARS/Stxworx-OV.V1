@@ -65,6 +65,7 @@ const MainLayout: React.FC = () => {
     const p = location.pathname;
     if (p === '/') return 'home';
     if (p === '/browse') return 'browse';
+    if (p === '/leaderboard') return 'leaderboard';
     if (p === '/client') return 'client';
     if (p === '/freelancer') return 'freelancer';
     if (p === '/profile') return 'profile';
@@ -78,6 +79,7 @@ const MainLayout: React.FC = () => {
     const map: Record<string, string> = {
       home: '/',
       browse: '/browse',
+      leaderboard: '/leaderboard',
       client: '/client',
       freelancer: '/freelancer',
       profile: '/profile',

@@ -5,6 +5,7 @@ import { requireAuth } from "../middleware/auth";
 export const userRoutes = Router();
 
 // Public
+userRoutes.get("/leaderboard", userController.getLeaderboard);
 userRoutes.get("/:address", userController.getByAddress);
 userRoutes.get("/:address/reviews", userController.getReviews);
 

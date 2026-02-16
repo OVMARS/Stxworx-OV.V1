@@ -1,19 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { Hexagon, LayoutDashboard, Users, CheckSquare, Briefcase, MessageSquare, Database, LogOut, Search, Bell, MessageCircle } from 'lucide-react';
+import { Hexagon, LayoutDashboard, Users, Briefcase, AlertTriangle, Database, LogOut, Search, Bell } from 'lucide-react';
 import AdminUsers from './admin/AdminUsers';
 import AdminJobs from './admin/AdminJobs';
-import AdminApprovals from './admin/AdminApprovals';
-import AdminSupport from './admin/AdminSupport';
+import AdminDisputes from './admin/AdminDisputes';
 import AdminNFT from './admin/AdminNFT';
-import AdminChats from './admin/AdminChats';
 import { useAppStore } from '../stores/useAppStore';
 
 interface AdminPanelProps {
   onLogout: () => void;
 }
 
-type AdminTab = 'overview' | 'users' | 'jobs' | 'chats' | 'approvals' | 'support' | 'nft';
+type AdminTab = 'overview' | 'users' | 'jobs' | 'disputes' | 'nft';
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -42,9 +40,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     switch (activeTab) {
       case 'users': return <AdminUsers />;
       case 'jobs': return <AdminJobs />;
-      case 'chats': return <AdminChats />;
-      case 'approvals': return <AdminApprovals />;
-      case 'support': return <AdminSupport />;
+      case 'disputes': return <AdminDisputes />;
       case 'nft': return <AdminNFT />;
       case 'overview':
       default:
@@ -114,11 +110,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
            <NavItem tab="overview" icon={LayoutDashboard} label="Overview" />
            <NavItem tab="users" icon={Users} label="Users Control" />
            <NavItem tab="jobs" icon={Briefcase} label="Jobs Queue" />
-           <NavItem tab="chats" icon={MessageCircle} label="Monitor Chats" />
            
            <div className="text-xs font-bold text-slate-600 uppercase tracking-wider px-4 mb-2 mt-6">Management</div>
-           <NavItem tab="approvals" icon={CheckSquare} label="Approvals" />
-           <NavItem tab="support" icon={MessageSquare} label="Customer Service" />
+           <NavItem tab="disputes" icon={AlertTriangle} label="Disputes" />
            <NavItem tab="nft" icon={Database} label="NFT Release" />
         </nav>
 
@@ -138,7 +132,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
          {/* Top Header */}
          <header className="h-20 bg-[#020617]/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-8 sticky top-0 z-10">
             <h1 className="text-xl font-bold text-white uppercase tracking-tight">
-               {activeTab === 'nft' ? 'NFT Release' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+               {activeTab === 'nft' ? 'NFT Release' : activeTab === 'disputes' ? 'Dispute Management' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
             </h1>
             
             <div className="flex items-center gap-6">
