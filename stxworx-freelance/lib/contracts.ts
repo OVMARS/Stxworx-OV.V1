@@ -9,14 +9,7 @@ import {
     UIntCV,
     ContractPrincipalCV
 } from '@stacks/transactions';
-import { APP_CONFIG } from './constants'; // You might need to adjust this import based on your storage
-
-// --- Configuration ---
-// STX Address: STVNRH0FC9XJP8J18C92J09MNBS2BS2TW6RCAQ87
-// Contract Name: escrow-multi-token-v4
-
-const CONTRACT_ADDRESS = 'STVNRH0FC9XJP8J18C92J09MNBS2BS2TW6RCAQ87';
-const CONTRACT_NAME = 'escrow-multi-token-v4';
+import { APP_CONFIG, CONTRACT_ADDRESS, CONTRACT_NAME, SBTC_CONTRACT_ADDRESS, SBTC_CONTRACT_NAME } from './constants';
 
 interface ProjectData {
     freelancerAddress: string;
@@ -60,12 +53,7 @@ export const createProjectContractCall = async (
 
     // If sBTC, we need to pass the trait reference
     if (data.tokenType === 'sBTC') {
-        // TODO: Replace with actual sBTC token contract for Testnet
-        // For now using a placeholder or common testnet sip-010
-        // Example: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.sbtc-token'
-        const sbtcContract = 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM';
-        const sbtcName = 'sbtc-token';
-        functionArgs.push(contractPrincipalCV(sbtcContract, sbtcName));
+        functionArgs.push(contractPrincipalCV(SBTC_CONTRACT_ADDRESS, SBTC_CONTRACT_NAME));
     }
 
     await openContractCall({
@@ -74,36 +62,106 @@ export const createProjectContractCall = async (
         contractName: CONTRACT_NAME,
         functionName,
         functionArgs,
-        postConditionMode: PostConditionMode.Allow, // Allow for now, should be specific in prod
+        postConditionMode: PostConditionMode.Allow,
         onFinish,
         onCancel,
         appDetails: {
-            name: 'STX Worx',
-            icon: window.location.origin + '/logo.png',
+            name: APP_CONFIG.name,
+            icon: window.location.origin + APP_CONFIG.icon,
         },
     });
 };
 
-export const saveProjectToBackend = async (txId: string, formData: any) => {
-    try {
-        const response = await fetch('http://localhost:3001/api/projects', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                txId,
-                clientAddress: formData.clientAddress, // Make sure to pass this from frontend
-                freelancerAddress: formData.freelancerAddress,
-                title: formData.title,
-                description: formData.description,
-                category: formData.category,
-                totalBudget: formData.totalBudget,
-                tokenType: formData.tokenType,
-                milestones: formData.milestones
-            }),
-        });
-        return await response.json();
-    } catch (error) {
-        console.error('Failed to save project to backend:', error);
-        throw error;
+/* ── Complete Milestone (Freelancer) ── */
+export const completeMilestoneContractCall = async (
+    projectId: number,
+    milestoneNum: number,
+    onFinish: (data: any) => void,
+    onCancel: () => void
+) => {
+    await openContractCall({
+        network: STACKS_TESTNET,
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: CONTRACT_NAME,
+        functionName: 'complete-milestone',
+        functionArgs: [uintCV(projectId), uintCV(milestoneNum)],
+        postConditionMode: PostConditionMode.Allow,
+        onFinish,
+        onCancel,
+        appDetails: { name: APP_CONFIG.name, icon: window.location.origin + APP_CONFIG.icon },
+    });
+};
+
+/* ── Release Milestone (Client pays freelancer) ── */
+export const releaseMilestoneContractCall = async (
+    projectId: number,
+    milestoneNum: number,
+    tokenType: 'STX' | 'sBTC',
+    onFinish: (data: any) => void,
+    onCancel: () => void
+) => {
+    const functionName = tokenType === 'STX' ? 'release-milestone-stx' : 'release-milestone-sbtc';
+    const functionArgs: (UIntCV | ContractPrincipalCV)[] = [
+        uintCV(projectId),
+        uintCV(milestoneNum),
+    ];
+    if (tokenType === 'sBTC') {
+        functionArgs.push(contractPrincipalCV(SBTC_CONTRACT_ADDRESS, SBTC_CONTRACT_NAME));
     }
+    await openContractCall({
+        network: STACKS_TESTNET,
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: CONTRACT_NAME,
+        functionName,
+        functionArgs,
+        postConditionMode: PostConditionMode.Allow,
+        onFinish,
+        onCancel,
+        appDetails: { name: APP_CONFIG.name, icon: window.location.origin + APP_CONFIG.icon },
+    });
+};
+
+/* ── File Dispute (Client or Freelancer) ── */
+export const fileDisputeContractCall = async (
+    projectId: number,
+    milestoneNum: number,
+    onFinish: (data: any) => void,
+    onCancel: () => void
+) => {
+    await openContractCall({
+        network: STACKS_TESTNET,
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: CONTRACT_NAME,
+        functionName: 'file-dispute',
+        functionArgs: [uintCV(projectId), uintCV(milestoneNum)],
+        postConditionMode: PostConditionMode.Allow,
+        onFinish,
+        onCancel,
+        appDetails: { name: APP_CONFIG.name, icon: window.location.origin + APP_CONFIG.icon },
+    });
+};
+
+/* ── Request Full Refund (Client) ── */
+export const requestRefundContractCall = async (
+    projectId: number,
+    tokenType: 'STX' | 'sBTC',
+    onFinish: (data: any) => void,
+    onCancel: () => void
+) => {
+    const functionName = tokenType === 'STX' ? 'request-full-refund-stx' : 'request-full-refund-sbtc';
+    const functionArgs: (UIntCV | ContractPrincipalCV)[] = [uintCV(projectId)];
+    if (tokenType === 'sBTC') {
+        functionArgs.push(contractPrincipalCV(SBTC_CONTRACT_ADDRESS, SBTC_CONTRACT_NAME));
+    }
+    await openContractCall({
+        network: STACKS_TESTNET,
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: CONTRACT_NAME,
+        functionName,
+        functionArgs,
+        postConditionMode: PostConditionMode.Allow,
+        onFinish,
+        onCancel,
+        appDetails: { name: APP_CONFIG.name, icon: window.location.origin + APP_CONFIG.icon },
+    });
 };
