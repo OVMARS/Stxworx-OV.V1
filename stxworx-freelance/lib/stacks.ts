@@ -1,4 +1,4 @@
-import { AppConfig, UserSession, authenticate as showConnectFn, openSignatureRequestPopup } from '@stacks/connect';
+import { AppConfig, UserSession, authenticate as showConnectFn, request as stacksRequest } from '@stacks/connect';
 import { STACKS_TESTNET, STACKS_MAINNET } from '@stacks/network';
 import { APP_CONFIG, IS_TESTNET } from './constants';
 
@@ -37,45 +37,20 @@ export function getUserAddress() {
     return userData?.profile?.stxAddress?.testnet || userData?.profile?.stxAddress?.mainnet;
 }
 
-export function getPublicKey(): string | null {
-    const userData = getUserData();
-    if (!userData) return null;
-    const appPrivKey = userData.appPrivateKey;
-    if (!appPrivKey) return null;
-    try {
-        const { getPublicKey: getPub } = require('@stacks/transactions');
-        return getPub(appPrivKey);
-    } catch {
-        return userData.profile?.stxAddress?.testnet || null;
-    }
-}
-
-export interface SignMessageResult {
-    signature: string;
-    publicKey: string;
-}
-
-export function requestSignMessage(message: string): Promise<SignMessageResult> {
-    return new Promise((resolve, reject) => {
-        openSignatureRequestPopup({
-            message,
-            appDetails: {
-                name: APP_CONFIG.name,
-                icon: window.location.origin + APP_CONFIG.icon,
-            },
-            network: IS_TESTNET ? 'testnet' : 'mainnet',
-            userSession,
-            onFinish: (data) => {
-                resolve({ signature: data.signature, publicKey: data.publicKey });
-            },
-            onCancel: () => {
-                reject(new Error('User cancelled signature request'));
-            },
-        });
-    });
-}
-
 export function signout() {
     userSession.signUserOut();
     window.location.reload();
+}
+
+/**
+ * Prompt the wallet to sign a plain-text message.
+ * Returns { signature, publicKey } on success, null if cancelled.
+ */
+export async function requestSignMessage(message: string): Promise<{ signature: string; publicKey: string } | null> {
+    try {
+        const result = await stacksRequest('stx_signMessage', { message });
+        return { signature: result.signature, publicKey: result.publicKey };
+    } catch {
+        return null;
+    }
 }

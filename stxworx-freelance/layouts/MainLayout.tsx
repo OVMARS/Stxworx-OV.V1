@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useWallet } from '../hooks/useWallet';
 import { useAppStore } from '../stores/useAppStore';
+import { api } from '../lib/api';
 import Navbar from '../components/Navbar';
 import RoleSelectModal from '../components/RoleSelectModal';
 import CreateProjectModal from '../components/CreateProjectModal';
@@ -54,8 +55,9 @@ const MainLayout: React.FC = () => {
     }
   };
 
-  const handleDisconnect = async () => {
-    await logoutUser();
+  const handleDisconnect = () => {
+    // Clear backend session cookie
+    api.auth.logout().catch(() => {});
     disconnect();
     navigate('/');
   };
@@ -99,21 +101,16 @@ const MainLayout: React.FC = () => {
 
   const handleRoleSelect = async (role: 'client' | 'freelancer') => {
     try {
-      setIsProcessing(true);
-      const user = await verifyAndLogin(role);
-      const actualRole = user.role;
+      await setUserRole(role);
+      // After backend auth, use the actual role from the store (may differ for existing users)
+      const actualRole = useAppStore.getState().userRole;
       navigate(actualRole === 'client' ? '/client' : '/freelancer');
-    } catch (e: any) {
-      console.error('Auth failed:', e.message);
-      if (e.message === 'User cancelled signature request') {
-        // User closed the Hiro sign popup — keep modal open
+    } catch (err: any) {
+      if (err?.message === 'SIGN_CANCELLED') {
+        // User closed the wallet popup — modal stays open, do nothing
         return;
       }
-      // For other errors (server down, etc.) fall back to local role
-      setUserRole(role);
-      navigate(role === 'client' ? '/client' : '/freelancer');
-    } finally {
-      setIsProcessing(false);
+      console.error('Role selection failed:', err);
     }
   };
 
