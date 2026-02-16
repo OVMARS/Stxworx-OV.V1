@@ -14,7 +14,7 @@ import {
   generateId,
 } from '../services/StacksService';
 import { api } from '../lib/api';
-import { requestSignMessage, getUserAddress } from '../lib/stacks';
+import { requestSignMessage } from '../lib/stacks';
 
 const ROLE_KEY_PREFIX = 'stxworx_role_';
 const roleKeyFor = (address: string) => `${ROLE_KEY_PREFIX}${address}`;
@@ -235,8 +235,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     const message = `STXWorx authentication: ${addr} at ${Date.now()}`;
     const signed = await requestSignMessage(message);
     if (!signed) {
-      // User cancelled signing — keep modal open
-      return;
+      // User cancelled signing — keep modal open so they can retry or close
+      throw new Error('SIGN_CANCELLED');
     }
 
     // Call backend — creates user if new, returns stored role if existing
@@ -249,13 +249,15 @@ export const useAppStore = create<AppState>((set, get) => ({
         role: role as 'client' | 'freelancer',
       });
       // Use the role from the backend response (may differ from `role` for existing users)
-      const backendRole = user.role as UserRole;
-      localStorage.setItem(roleKeyFor(addr), backendRole!);
+      const backendRole = (user.role as UserRole) ?? role;
+      localStorage.setItem(roleKeyFor(addr), backendRole as string);
       set({ userRole: backendRole, showRoleModal: false });
-    } catch (err) {
+    } catch (err: any) {
+      // Re-throw cancellation so callers can handle it
+      if (err?.message === 'SIGN_CANCELLED') throw err;
       console.error('Backend auth failed:', err);
       // Fallback: use client-side role so the UI doesn't get stuck
-      localStorage.setItem(roleKeyFor(addr), role);
+      localStorage.setItem(roleKeyFor(addr), role as string);
       set({ userRole: role, showRoleModal: false });
     }
   },

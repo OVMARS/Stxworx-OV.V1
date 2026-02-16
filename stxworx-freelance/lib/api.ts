@@ -3,10 +3,15 @@
 const BASE = '/api';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {};
+  // Only set Content-Type for requests with a body
+  if (init?.body) headers['Content-Type'] = 'application/json';
+  Object.assign(headers, init?.headers as any);
+
   const res = await fetch(`${BASE}${path}`, {
     credentials: 'include',          // send httpOnly cookie
-    headers: { 'Content-Type': 'application/json', ...(init?.headers as any) },
     ...init,
+    headers,
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -17,13 +22,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 /* ── Auth types returned by backend ── */
 
+/** Fields always returned by backend auth endpoints */
 export interface BackendUser {
   id: number;
   stxAddress: string;
   username: string | null;
   role: 'client' | 'freelancer';
-  isActive: boolean;
-  createdAt: string;
+  /** Only returned by GET /auth/me */
+  isActive?: boolean;
+  /** Only returned by GET /auth/me */
+  createdAt?: string;
 }
 
 /* ── Auth endpoints ── */
@@ -38,7 +46,7 @@ export const api = {
       message: string;
       role: 'client' | 'freelancer';
     }) =>
-      request<{ user: BackendUser; token: string }>('/auth/verify-wallet', {
+      request<{ message: string; user: BackendUser }>('/auth/verify-wallet', {
         method: 'POST',
         body: JSON.stringify(data),
       }),

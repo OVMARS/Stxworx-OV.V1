@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useWallet } from '../hooks/useWallet';
 import { useAppStore } from '../stores/useAppStore';
+import { api } from '../lib/api';
 import Navbar from '../components/Navbar';
 import RoleSelectModal from '../components/RoleSelectModal';
 import CreateProjectModal from '../components/CreateProjectModal';
@@ -54,6 +55,8 @@ const MainLayout: React.FC = () => {
   };
 
   const handleDisconnect = () => {
+    // Clear backend session cookie
+    api.auth.logout().catch(() => {});
     disconnect();
     navigate('/');
   };
@@ -96,10 +99,18 @@ const MainLayout: React.FC = () => {
   };
 
   const handleRoleSelect = async (role: 'client' | 'freelancer') => {
-    await setUserRole(role);
-    // After backend auth, use the actual role from the store (may differ for existing users)
-    const actualRole = useAppStore.getState().userRole;
-    navigate(actualRole === 'client' ? '/client' : '/freelancer');
+    try {
+      await setUserRole(role);
+      // After backend auth, use the actual role from the store (may differ for existing users)
+      const actualRole = useAppStore.getState().userRole;
+      navigate(actualRole === 'client' ? '/client' : '/freelancer');
+    } catch (err: any) {
+      if (err?.message === 'SIGN_CANCELLED') {
+        // User closed the wallet popup — modal stays open, do nothing
+        return;
+      }
+      console.error('Role selection failed:', err);
+    }
   };
 
   const isAdminRoute = location.pathname.startsWith('/admin');
