@@ -1,26 +1,28 @@
 import { create } from 'zustand';
-import { Project, Gig, FreelancerProfile, WalletState, ChatContact, UserRole, Application, ApplicationStatus } from '../types';
+import { Project, Gig, FreelancerProfile, WalletState, ChatContact, UserRole, Application, ApplicationStatus, Proposal, ProposalStatus } from '../types';
 import {
-  fetchProjects,
   fetchGigs,
   fetchLeaderboard,
   fetchFreelancerByAddress,
-  createProjectService,
   createGigService,
-  fundProject,
-  releasePayment,
-  submitMilestone,
   connectX,
   generateId,
 } from '../services/StacksService';
-import { api, type AuthUser } from '../lib/api';
+import {
+  api, mapBackendProject,
+  type AuthUser, type Category, type BackendProposal,
+  type BackendMilestoneSubmission, type BackendDispute, type BackendReview,
+  type AdminAuthUser, type AdminDashboardStats, type BackendUser, type BackendNFT, type BackendProject,
+} from '../lib/api';
 import { requestSignMessage, getUserAddress } from '../lib/stacks';
 
 const ROLE_STORAGE_KEY = 'stxworx_user_role';
-const APPLICATIONS_STORAGE_KEY = 'stxworx_applications';
 
 interface AppState {
+  categories: Category[];
   projects: Project[];
+  myPostedProjects: Project[];
+  myActiveProjects: Project[];
   gigs: Gig[];
   filteredGigs: Gig[];
   leaderboardData: FreelancerProfile[];
@@ -40,13 +42,38 @@ interface AppState {
   isGigModalOpen: boolean;
   modalInitialData: any;
   activeChatContact: ChatContact | null;
+  /** @deprecated kept for backward compat — use myProposals instead */
   applications: Application[];
+  myProposals: Proposal[];
+  projectProposals: Record<number, Proposal[]>;
+  milestoneSubmissions: Record<number, BackendMilestoneSubmission[]>;
+  projectDisputes: Record<number, BackendDispute[]>;
+  profileReviews: Record<string, BackendReview[]>;
   freelancerDashboardTab: 'applied' | 'active' | 'completed' | 'earnings' | 'nft';
   authUser: AuthUser | null;
   isAuthChecking: boolean;
 
+  // Admin state
+  adminUser: AdminAuthUser | null;
+  isAdminAuthenticated: boolean;
+  adminDashboardStats: AdminDashboardStats | null;
+  adminUsers: BackendUser[];
+  adminProjects: BackendProject[];
+  adminDisputes: BackendDispute[];
+  adminNFTs: BackendNFT[];
+
   // Actions
   init: () => Promise<void>;
+  fetchCategories: () => Promise<void>;
+  fetchProjects: () => Promise<void>;
+  fetchMyProjects: () => Promise<void>;
+  fetchMyProposals: () => Promise<void>;
+  fetchProjectProposals: (projectId: number) => Promise<void>;
+  fetchMilestoneSubmissions: (projectId: number) => Promise<void>;
+  fetchProjectDisputes: (projectId: number) => Promise<void>;
+  createDispute: (data: { projectId: number; milestoneNum: number; reason: string; evidenceUrl?: string }) => Promise<void>;
+  fetchProfileReviews: (address: string) => Promise<void>;
+  createReview: (data: { projectId: number; revieweeId: number; rating: number; comment?: string }) => Promise<void>;
   syncWallet: (isSignedIn: boolean, userAddress: string | null) => Promise<void>;
   setSearchTerm: (term: string) => void;
   setSelectedCategory: (cat: string) => void;
@@ -64,8 +91,13 @@ interface AppState {
 
   verifyAndLogin: (role: 'client' | 'freelancer') => Promise<AuthUser>;
   logoutUser: () => Promise<void>;
-  applyToProject: (project: Project, coverLetter?: string) => void;
+  applyToProject: (project: Project, coverLetter: string) => Promise<void>;
+  withdrawProposal: (proposalId: number) => Promise<void>;
+  acceptProposal: (proposalId: number) => Promise<void>;
+  rejectProposal: (proposalId: number) => Promise<void>;
+  /** @deprecated — use applyToProject (API-backed) instead */
   updateApplicationStatus: (applicationId: string, status: ApplicationStatus) => void;
+  hasAppliedToProject: (projectId: string) => boolean;
   setFreelancerDashboardTab: (tab: 'applied' | 'active' | 'completed' | 'earnings' | 'nft') => void;
   handleCreateProject: (data: any) => Promise<void>;
   handleCreateGig: (data: any) => Promise<void>;
@@ -75,10 +107,29 @@ interface AppState {
   viewProfileByAddress: (address: string, name?: string) => Promise<FreelancerProfile>;
   openHireModal: (gig: Gig) => void;
   incrementBlock: () => void;
+
+  // Admin actions
+  adminLogin: (username: string, password: string) => Promise<void>;
+  adminLogout: () => Promise<void>;
+  checkAdminSession: () => Promise<boolean>;
+  fetchDashboardStats: () => Promise<void>;
+  fetchAdminUsers: () => Promise<void>;
+  toggleUserStatus: (userId: number, isActive: boolean) => Promise<void>;
+  fetchAdminProjects: (filters?: { status?: string; search?: string }) => Promise<void>;
+  fetchAdminDisputes: () => Promise<void>;
+  adminResolveDispute: (id: number, resolution: string, resolutionTxId: string) => Promise<void>;
+  adminResetDispute: (id: number, resolution: string, resolutionTxId: string) => Promise<void>;
+  adminForceRelease: (projectId: number, milestoneNum: number, txId: string) => Promise<void>;
+  adminForceRefund: (projectId: number, txId: string) => Promise<void>;
+  adminCreateNFT: (data: { recipientId: number; nftType: string; name: string; description?: string; metadataUrl?: string }) => Promise<void>;
+  fetchAdminNFTs: (filters?: { nftType?: string; minted?: boolean }) => Promise<void>;
+  adminConfirmMint: (nftId: number, mintTxId: string) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
   projects: [],
+  myPostedProjects: [],
+  myActiveProjects: [],
   gigs: [],
   filteredGigs: [],
   leaderboardData: [],
@@ -105,19 +156,153 @@ export const useAppStore = create<AppState>((set, get) => ({
   isGigModalOpen: false,
   modalInitialData: null,
   activeChatContact: null,
-  applications: JSON.parse(localStorage.getItem(APPLICATIONS_STORAGE_KEY) || '[]'),
+  applications: [],
+  myProposals: [],
+  projectProposals: {},
+  milestoneSubmissions: {},
+  projectDisputes: {},
+  profileReviews: {},
   freelancerDashboardTab: 'applied',
   authUser: null,
   isAuthChecking: false,
+  categories: [],
+
+  // Admin defaults
+  adminUser: null,
+  isAdminAuthenticated: false,
+  adminDashboardStats: null,
+  adminUsers: [],
+  adminProjects: [],
+  adminDisputes: [],
+  adminNFTs: [],
+
+  fetchCategories: async () => {
+    try {
+      const cats = await api.categories.list();
+      set({ categories: cats });
+    } catch (e) {
+      console.error('Failed to fetch categories:', e);
+    }
+  },
+
+  fetchProjects: async () => {
+    try {
+      const raw = await api.projects.list();
+      const mapped = raw.map(mapBackendProject);
+      set({ projects: mapped });
+    } catch (e) {
+      console.error('Failed to fetch projects:', e);
+    }
+  },
+
+  fetchMyProjects: async () => {
+    try {
+      const [posted, active] = await Promise.all([
+        api.projects.myPosted().catch(() => []),
+        api.projects.myActive().catch(() => []),
+      ]);
+      set({
+        myPostedProjects: posted.map(mapBackendProject),
+        myActiveProjects: active.map(mapBackendProject),
+      });
+    } catch (e) {
+      console.error('Failed to fetch my projects:', e);
+    }
+  },
+
+  fetchMyProposals: async () => {
+    try {
+      const raw = await api.proposals.my();
+      set({ myProposals: raw });
+    } catch (e) {
+      // Not authed or no proposals — fine
+      set({ myProposals: [] });
+    }
+  },
+
+  fetchProjectProposals: async (projectId: number) => {
+    try {
+      const raw = await api.proposals.getByProject(projectId);
+      set((s) => ({
+        projectProposals: { ...s.projectProposals, [projectId]: raw },
+      }));
+    } catch (e) {
+      console.error('Failed to fetch project proposals:', e);
+    }
+  },
+
+  fetchMilestoneSubmissions: async (projectId: number) => {
+    try {
+      const subs = await api.milestones.getByProject(projectId);
+      set((s) => ({
+        milestoneSubmissions: { ...s.milestoneSubmissions, [projectId]: subs },
+      }));
+    } catch (e) {
+      // Not authed or no submissions
+    }
+  },
+
+  fetchProjectDisputes: async (projectId: number) => {
+    try {
+      const disputes = await api.disputes.getByProject(projectId);
+      set((s) => ({
+        projectDisputes: { ...s.projectDisputes, [projectId]: disputes },
+      }));
+    } catch (e) {
+      // Not authed or no disputes
+    }
+  },
+
+  createDispute: async (data) => {
+    set({ isProcessing: true });
+    try {
+      await api.disputes.create(data);
+      await get().fetchProjectDisputes(data.projectId);
+      await get().fetchProjects();
+      await get().fetchMyProjects();
+    } catch (error) {
+      console.error('Failed to create dispute:', error);
+      throw error;
+    } finally {
+      set({ isProcessing: false });
+    }
+  },
+
+  fetchProfileReviews: async (address: string) => {
+    try {
+      const reviews = await api.users.getReviews(address);
+      set((s) => ({
+        profileReviews: { ...s.profileReviews, [address]: reviews },
+      }));
+    } catch (e) {
+      // Not found or no reviews
+    }
+  },
+
+  createReview: async (data) => {
+    set({ isProcessing: true });
+    try {
+      await api.reviews.create(data);
+      // Refresh projects to reflect completion
+      await get().fetchProjects();
+      await get().fetchMyProjects();
+    } catch (error) {
+      console.error('Failed to create review:', error);
+      throw error;
+    } finally {
+      set({ isProcessing: false });
+    }
+  },
 
   init: async () => {
-    const [storedProjects, fetchedGigs, fetchedLeaderboard] = await Promise.all([
-      fetchProjects(),
+    const [, fetchedGigs, fetchedLeaderboard] = await Promise.all([
+      get().fetchProjects(),
       fetchGigs(),
       fetchLeaderboard(),
+      get().fetchCategories(),
+      get().fetchMyProposals(),
     ]);
     set({
-      projects: storedProjects,
       gigs: fetchedGigs,
       filteredGigs: fetchedGigs,
       leaderboardData: fetchedLeaderboard,
@@ -142,14 +327,30 @@ export const useAppStore = create<AppState>((set, get) => ({
           showRoleModal: false,
           isAuthChecking: false,
         });
+        // Bootstrap user-specific data
+        get().fetchMyProposals();
+        get().fetchMyProjects();
       } catch {
-        // No valid session — check localStorage cache or show role modal
-        const savedRole = localStorage.getItem(ROLE_STORAGE_KEY) as UserRole;
-        set({
-          userRole: savedRole || null,
-          showRoleModal: !savedRole,
-          isAuthChecking: false,
-        });
+        // No valid session — check if this address already has an account
+        try {
+          const existing = await api.users.getByAddress(userAddress);
+          // Returning user — auto-sign with their stored role (skip modal)
+          set({ isAuthChecking: false });
+          try {
+            await get().verifyAndLogin(existing.role);
+          } catch (signErr: any) {
+            // User cancelled sign popup or backend error — stay disconnected
+            console.error('Auto-sign failed:', signErr.message);
+            set({ userRole: null, showRoleModal: false });
+          }
+        } catch {
+          // 404 — brand new user, show role modal
+          set({
+            userRole: null,
+            showRoleModal: true,
+            isAuthChecking: false,
+          });
+        }
       }
 
       // Fetch profile + balances in parallel (non-blocking)
@@ -277,33 +478,67 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setFreelancerDashboardTab: (tab) => set({ freelancerDashboardTab: tab }),
 
-  applyToProject: (project, coverLetter) => {
-    const { wallet, applications } = get();
+  applyToProject: async (project, coverLetter) => {
+    const { wallet } = get();
     if (!wallet.address) return;
-    const alreadyApplied = applications.some(
-      (a) => a.projectId === project.id && a.freelancerAddress === wallet.address
-    );
-    if (alreadyApplied) return;
-    const newApp: Application = {
-      id: generateId(),
-      projectId: project.id,
-      freelancerAddress: wallet.address,
-      status: 'applied',
-      appliedAt: new Date().toISOString(),
-      coverLetter,
-      project,
-    };
-    const updated = [...applications, newApp];
-    localStorage.setItem(APPLICATIONS_STORAGE_KEY, JSON.stringify(updated));
-    set({ applications: updated });
+    try {
+      set({ isProcessing: true });
+      await api.proposals.create(Number(project.id), coverLetter);
+      await get().fetchMyProposals();
+    } catch (error: any) {
+      console.error('Apply failed:', error.message);
+      // Surface 409 duplicates gracefully
+    } finally {
+      set({ isProcessing: false });
+    }
   },
 
-  updateApplicationStatus: (applicationId, status) => {
-    const updated = get().applications.map((a) =>
-      a.id === applicationId ? { ...a, status } : a
-    );
-    localStorage.setItem(APPLICATIONS_STORAGE_KEY, JSON.stringify(updated));
-    set({ applications: updated });
+  withdrawProposal: async (proposalId) => {
+    try {
+      set({ isProcessing: true });
+      await api.proposals.withdraw(proposalId);
+      await get().fetchMyProposals();
+    } catch (error: any) {
+      console.error('Withdraw failed:', error.message);
+    } finally {
+      set({ isProcessing: false });
+    }
+  },
+
+  acceptProposal: async (proposalId) => {
+    try {
+      set({ isProcessing: true });
+      await api.proposals.accept(proposalId);
+      // Refresh both proposals and projects (accept assigns freelancer)
+      await Promise.all([
+        get().fetchMyProjects(),
+        get().fetchProjects(),
+      ]);
+    } catch (error: any) {
+      console.error('Accept proposal failed:', error.message);
+    } finally {
+      set({ isProcessing: false });
+    }
+  },
+
+  rejectProposal: async (proposalId) => {
+    try {
+      set({ isProcessing: true });
+      await api.proposals.reject(proposalId);
+    } catch (error: any) {
+      console.error('Reject proposal failed:', error.message);
+    } finally {
+      set({ isProcessing: false });
+    }
+  },
+
+  hasAppliedToProject: (projectId) => {
+    const { myProposals } = get();
+    return myProposals.some((p) => String(p.projectId) === projectId && p.status !== 'withdrawn');
+  },
+
+  updateApplicationStatus: (_applicationId, _status) => {
+    // deprecated — no-op
   },
 
   handleCreateProject: async (data) => {
@@ -311,32 +546,33 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!wallet.address) return;
     set({ isProcessing: true });
 
-    const milestoneAmount = data.totalBudget / 4;
-    const defaultMilestones = [
-      { id: 1, title: 'Milestone 1', amount: milestoneAmount, status: 'locked' as const },
-      { id: 2, title: 'Milestone 2', amount: milestoneAmount, status: 'locked' as const },
-      { id: 3, title: 'Milestone 3', amount: milestoneAmount, status: 'locked' as const },
-      { id: 4, title: 'Milestone 4', amount: milestoneAmount, status: 'locked' as const },
-    ];
+    try {
+      // Build the flat milestone payload the backend expects
+      const payload: any = {
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        tokenType: data.tokenType,
+        numMilestones: data.milestones?.length || 1,
+      };
 
-    const newProject: Project = {
-      id: generateId(),
-      title: data.title,
-      description: data.description,
-      category: data.category,
-      clientAddress: wallet.address,
-      freelancerAddress: data.freelancerAddress,
-      tokenType: data.tokenType,
-      totalBudget: data.totalBudget,
-      isFunded: false,
-      createdAt: new Date().toISOString(),
-      milestones: data.milestones || defaultMilestones,
-      attachments: data.attachments || [],
-    };
+      // Map milestones array to flat fields
+      const milestones = data.milestones || [];
+      milestones.forEach((m: any, i: number) => {
+        const idx = i + 1;
+        payload[`milestone${idx}Title`] = m.title;
+        payload[`milestone${idx}Description`] = m.description || '';
+        payload[`milestone${idx}Amount`] = String(m.amount);
+      });
 
-    await createProjectService(newProject);
-    const updatedProjects = await fetchProjects();
-    set({ projects: updatedProjects, isProcessing: false, isModalOpen: false, modalInitialData: null });
+      await api.projects.create(payload);
+      await get().fetchProjects();
+      await get().fetchMyProjects();
+      set({ isProcessing: false, isModalOpen: false, modalInitialData: null });
+    } catch (error: any) {
+      console.error('Create project failed:', error.message);
+      set({ isProcessing: false });
+    }
   },
 
   handleCreateGig: async (data) => {
@@ -368,17 +604,39 @@ export const useAppStore = create<AppState>((set, get) => ({
   handleProjectAction: async (projectId, actionType, payload) => {
     set({ isProcessing: true });
     try {
-      const { projects } = get();
-      if (actionType === 'fund') {
-        const project = projects.find((p) => p.id === projectId);
-        if (project) await fundProject(projectId, project.totalBudget, project.tokenType);
+      if (actionType === 'fund' || actionType === 'activate') {
+        // After on-chain escrow tx, activate the project in the backend
+        await api.projects.activate(
+          projectId,
+          payload?.escrowTxId || 'pending',
+          payload?.onChainId || 0,
+        );
+      } else if (actionType === 'cancel') {
+        await api.projects.cancel(projectId);
       } else if (actionType === 'submit_milestone') {
-        await submitMilestone(projectId, payload.milestoneId, payload.link);
+        // Freelancer submits deliverable for a milestone
+        await api.milestones.submit({
+          projectId: Number(projectId),
+          milestoneNum: payload.milestoneId,
+          deliverableUrl: payload.link,
+          description: payload.description,
+          completionTxId: payload.completionTxId,
+        });
+        // Refresh milestone submissions for this project
+        await get().fetchMilestoneSubmissions(Number(projectId));
       } else if (actionType === 'approve_milestone') {
-        await releasePayment(projectId, payload.milestoneId);
+        // Client approves a milestone submission
+        await api.milestones.approve(
+          payload.submissionId,
+          payload.releaseTxId || 'pending',
+        );
+        await get().fetchMilestoneSubmissions(Number(projectId));
+      } else if (actionType === 'reject_milestone') {
+        await api.milestones.reject(payload.submissionId);
+        await get().fetchMilestoneSubmissions(Number(projectId));
       }
-      const updatedProjects = await fetchProjects();
-      set({ projects: updatedProjects });
+      await get().fetchProjects();
+      await get().fetchMyProjects();
     } catch (error) {
       console.error('Action failed', error);
     } finally {
@@ -402,14 +660,23 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   handleSaveProfile: async (updatedProfile) => {
     set({ isProcessing: true });
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    set((s) => ({
-      currentUserProfile: updatedProfile,
-      leaderboardData: s.leaderboardData.map((p) =>
-        p.address === updatedProfile.address ? updatedProfile : p
-      ),
-      isProcessing: false,
-    }));
+    try {
+      // Save username to backend
+      if (updatedProfile.name) {
+        await api.users.updateMe({ username: updatedProfile.name });
+      }
+      // Update local state with all profile data (rich fields are client-side for now)
+      set((s) => ({
+        currentUserProfile: updatedProfile,
+        leaderboardData: s.leaderboardData.map((p) =>
+          p.address === updatedProfile.address ? updatedProfile : p
+        ),
+        isProcessing: false,
+      }));
+    } catch (error) {
+      console.error('Save profile failed:', error);
+      set({ isProcessing: false });
+    }
   },
 
   viewProfileByAddress: async (address, name) => {
@@ -430,5 +697,113 @@ export const useAppStore = create<AppState>((set, get) => ({
       },
       isModalOpen: true,
     });
+  },
+
+  // ─── Admin Actions ──────────────────────────────────────────
+
+  adminLogin: async (username, password) => {
+    const res = await api.admin.login(username, password);
+    set({ adminUser: res.admin, isAdminAuthenticated: true });
+  },
+
+  adminLogout: async () => {
+    await api.admin.logout();
+    set({ adminUser: null, isAdminAuthenticated: false, adminDashboardStats: null, adminUsers: [], adminProjects: [], adminDisputes: [], adminNFTs: [] });
+  },
+
+  checkAdminSession: async () => {
+    try {
+      const res = await api.admin.me();
+      set({ adminUser: res.admin, isAdminAuthenticated: true });
+      return true;
+    } catch {
+      set({ adminUser: null, isAdminAuthenticated: false });
+      return false;
+    }
+  },
+
+  fetchDashboardStats: async () => {
+    try {
+      const stats = await api.admin.dashboard();
+      set({ adminDashboardStats: stats });
+    } catch (e) {
+      console.error('Failed to fetch dashboard stats:', e);
+    }
+  },
+
+  fetchAdminUsers: async () => {
+    try {
+      const users = await api.admin.users();
+      set({ adminUsers: users });
+    } catch (e) {
+      console.error('Failed to fetch admin users:', e);
+    }
+  },
+
+  toggleUserStatus: async (userId, isActive) => {
+    try {
+      const updated = await api.admin.toggleUserStatus(userId, isActive);
+      set((s) => ({ adminUsers: s.adminUsers.map((u) => (u.id === updated.id ? updated : u)) }));
+    } catch (e) {
+      console.error('Failed to toggle user status:', e);
+    }
+  },
+
+  fetchAdminProjects: async (filters) => {
+    try {
+      const projects = await api.admin.projects(filters);
+      set({ adminProjects: projects });
+    } catch (e) {
+      console.error('Failed to fetch admin projects:', e);
+    }
+  },
+
+  fetchAdminDisputes: async () => {
+    try {
+      const disputes = await api.admin.disputes();
+      set({ adminDisputes: disputes });
+    } catch (e) {
+      console.error('Failed to fetch admin disputes:', e);
+    }
+  },
+
+  adminResolveDispute: async (id, resolution, resolutionTxId) => {
+    const updated = await api.admin.resolveDispute(id, resolution, resolutionTxId);
+    set((s) => ({ adminDisputes: s.adminDisputes.map((d) => (d.id === updated.id ? updated : d)) }));
+  },
+
+  adminResetDispute: async (id, resolution, resolutionTxId) => {
+    const updated = await api.admin.resetDispute(id, resolution, resolutionTxId);
+    set((s) => ({ adminDisputes: s.adminDisputes.map((d) => (d.id === updated.id ? updated : d)) }));
+  },
+
+  adminForceRelease: async (projectId, milestoneNum, txId) => {
+    await api.admin.forceRelease(projectId, milestoneNum, txId);
+    // Refresh admin projects list
+    get().fetchAdminProjects();
+  },
+
+  adminForceRefund: async (projectId, txId) => {
+    await api.admin.forceRefund(projectId, txId);
+    get().fetchAdminProjects();
+  },
+
+  adminCreateNFT: async (data) => {
+    const nft = await api.admin.createNFT(data);
+    set((s) => ({ adminNFTs: [nft, ...s.adminNFTs] }));
+  },
+
+  fetchAdminNFTs: async (filters) => {
+    try {
+      const nfts = await api.admin.listNFTs(filters);
+      set({ adminNFTs: nfts });
+    } catch (e) {
+      console.error('Failed to fetch admin NFTs:', e);
+    }
+  },
+
+  adminConfirmMint: async (nftId, mintTxId) => {
+    const updated = await api.admin.confirmMint(nftId, mintTxId);
+    set((s) => ({ adminNFTs: s.adminNFTs.map((n) => (n.id === updated.id ? updated : n)) }));
   },
 }));

@@ -1,14 +1,29 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
+import * as LucideIcons from 'lucide-react';
 import {
   ShieldCheck, Zap, Layers, ArrowRight, Lock, Check, TrendingUp,
   Users, Hexagon, Twitter, Github, Globe, Code, Palette, Film,
 } from 'lucide-react';
 
+/** Map a Lucide icon name string (e.g. 'Code') to its component */
+const getIcon = (name: string): React.ReactNode => {
+  const Icon = (LucideIcons as any)[name] as React.FC<{ className?: string }>;
+  return Icon ? <Icon /> : <Code />;
+};
+
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { currentBlock } = useAppStore();
+  const { currentBlock, categories } = useAppStore();
+
+  const fallbackCategories = [
+    { icon: 'Palette', name: 'Creative & Design', subcategories: ['NFTs', 'UI/UX'] },
+    { icon: 'Code', name: 'Development', subcategories: ['Clarity', 'React', 'Rust'] },
+    { icon: 'Film', name: 'Media & Content', subcategories: ['Video', 'Technical Writing'] },
+    { icon: 'Users', name: 'Community', subcategories: ['Moderation', 'Growth'] },
+  ];
+  const displayCategories = categories.length > 0 ? categories : fallbackCategories;
 
   return (
     <div className="relative font-sans text-slate-200">
@@ -107,22 +122,17 @@ const HomePage: React.FC = () => {
             <p className="text-slate-400 mt-4 max-w-xl mx-auto">Find elite developers and creators verified on the Stacks blockchain</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slide-up delay-500">
-            {[
-              { icon: <Palette />, title: 'Creative & Design', specialties: 'NFTs, UI/UX' },
-              { icon: <Code />, title: 'Development', specialties: 'Clarity, React, Rust' },
-              { icon: <Film />, title: 'Media & Content', specialties: 'Video, Technical Writing' },
-              { icon: <Users />, title: 'Community', specialties: 'Moderation, Growth' },
-            ].map((cat, idx) => (
-              <div key={idx} className="group relative bg-[#0b0f19] p-6 rounded-2xl border border-white/5 overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_40px_-10px_rgba(249,115,22,0.3)]">
+            {displayCategories.map((cat, idx) => (
+              <div key={idx} onClick={() => navigate('/browse')} className="cursor-pointer group relative bg-[#0b0f19] p-6 rounded-2xl border border-white/5 overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_40px_-10px_rgba(249,115,22,0.3)]">
                 <div className="absolute inset-0 bg-gradient-to-br from-orange-600/0 via-orange-600/0 to-orange-600/0 group-hover:from-orange-600/10 group-hover:to-purple-600/10 transition-all duration-500" />
                 <div className="absolute bottom-0 left-0 h-1 w-full bg-orange-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
                 <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-slate-400 mb-6 border border-slate-800 group-hover:border-orange-500/50 group-hover:text-orange-500 transition-colors relative z-10">
-                  {cat.icon}
+                  {getIcon(cat.icon)}
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2 relative z-10">{cat.title}</h3>
-                <p className="text-slate-500 text-xs mb-8 uppercase tracking-wide relative z-10">{cat.specialties}</p>
+                <h3 className="text-xl font-bold text-white mb-2 relative z-10">{cat.name}</h3>
+                <p className="text-slate-500 text-xs mb-8 uppercase tracking-wide relative z-10">{cat.subcategories.join(', ')}</p>
                 <div className="flex justify-between items-center mt-auto pt-4 border-t border-white/5 relative z-10">
-                  <span className="text-xs text-slate-600 font-mono group-hover:text-slate-400 transition-colors">0 active gigs</span>
+                  <span className="text-xs text-slate-600 font-mono group-hover:text-slate-400 transition-colors">Browse &rarr;</span>
                   <span className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300">
                     <ArrowRight className="w-4 h-4" />
                   </span>

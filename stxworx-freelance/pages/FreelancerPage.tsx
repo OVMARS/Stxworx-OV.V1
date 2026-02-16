@@ -1,45 +1,48 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
 import ProjectCard from '../components/ProjectCard';
 import Leaderboard from '../components/Leaderboard';
 import {
   Briefcase, Settings, Send, CheckCircle2, Clock, Play, Trophy,
-  DollarSign, Award, TrendingUp, FileText, Shield, ArrowRight,
+  DollarSign, Award, TrendingUp, FileText, Shield, ArrowRight, XCircle, Ban,
 } from 'lucide-react';
 import { formatUSD, tokenToUsd } from '../services/StacksService';
-import { Application, ApplicationStatus } from '../types';
+import { Proposal, ProposalStatus } from '../types';
 
-const STATUS_CONFIG: Record<ApplicationStatus, { label: string; color: string; icon: React.ReactNode; bg: string }> = {
-  applied:      { label: 'Applied',     color: 'text-blue-400',    icon: <Send className="w-3.5 h-3.5" />,         bg: 'bg-blue-950/30 border-blue-900/50' },
-  accepted:     { label: 'Accepted',    color: 'text-amber-400',   icon: <CheckCircle2 className="w-3.5 h-3.5" />, bg: 'bg-amber-950/30 border-amber-900/50' },
-  'in-progress': { label: 'In Progress', color: 'text-orange-400',  icon: <Play className="w-3.5 h-3.5" />,         bg: 'bg-orange-950/30 border-orange-900/50' },
-  completed:    { label: 'Completed',   color: 'text-emerald-400', icon: <Trophy className="w-3.5 h-3.5" />,       bg: 'bg-emerald-950/30 border-emerald-900/50' },
+const PROPOSAL_STATUS_CONFIG: Record<ProposalStatus, { label: string; color: string; icon: React.ReactNode; bg: string }> = {
+  pending:   { label: 'Pending',   color: 'text-blue-400',    icon: <Clock className="w-3.5 h-3.5" />,        bg: 'bg-blue-950/30 border-blue-900/50' },
+  accepted:  { label: 'Accepted',  color: 'text-emerald-400', icon: <CheckCircle2 className="w-3.5 h-3.5" />, bg: 'bg-emerald-950/30 border-emerald-900/50' },
+  rejected:  { label: 'Rejected',  color: 'text-red-400',     icon: <XCircle className="w-3.5 h-3.5" />,      bg: 'bg-red-950/30 border-red-900/50' },
+  withdrawn: { label: 'Withdrawn', color: 'text-slate-400',   icon: <Ban className="w-3.5 h-3.5" />,          bg: 'bg-slate-900/30 border-slate-700/50' },
 };
-
-const PIPELINE_STEPS: ApplicationStatus[] = ['applied', 'accepted', 'in-progress', 'completed'];
 
 const FreelancerPage: React.FC = () => {
   const navigate = useNavigate();
   const {
-    projects, wallet, currentUserProfile, leaderboardData,
+    myActiveProjects, wallet, currentUserProfile, leaderboardData, projects,
     freelancerDashboardTab, setFreelancerDashboardTab, isProcessing,
-    handleProjectAction, setIsGigModalOpen, applications, updateApplicationStatus,
+    handleProjectAction, setIsGigModalOpen, myProposals, withdrawProposal,
+    fetchMyProjects, fetchMyProposals,
   } = useAppStore();
 
-  const myApplications = useMemo(
-    () => applications.filter((a) => a.freelancerAddress === wallet.address),
-    [applications, wallet.address]
-  );
+  useEffect(() => {
+    if (wallet.address) {
+      fetchMyProjects();
+      fetchMyProposals();
+    }
+  }, [wallet.address]);
 
-  const appliedApps     = myApplications.filter((a) => a.status === 'applied');
-  const activeApps      = myApplications.filter((a) => a.status === 'accepted' || a.status === 'in-progress');
-  const completedApps   = myApplications.filter((a) => a.status === 'completed');
-  const myProjects      = projects.filter((p) => p.freelancerAddress === wallet.address);
+  // Build a map of projectId→Project for enriching proposals
+  const projectMap = useMemo(() => {
+    const m = new Map<string, typeof projects[0]>();
+    projects.forEach((p) => m.set(p.id, p));
+    return m;
+  }, [projects]);
 
-  const totalEarnings = useMemo(() => {
-    return completedApps.reduce((sum, a) => sum + tokenToUsd(a.project.totalBudget, a.project.tokenType), 0);
-  }, [completedApps]);
+  const pendingProposals  = myProposals.filter((p) => p.status === 'pending');
+  const acceptedProposals = myProposals.filter((p) => p.status === 'accepted');
+  const rejectedProposals = myProposals.filter((p) => p.status === 'rejected' || p.status === 'withdrawn');
 
   const handleViewProfile = (address: string | any, name?: string) => {
     if (typeof address === 'string') {
@@ -50,86 +53,75 @@ const FreelancerPage: React.FC = () => {
     }
   };
 
-  const renderPipeline = (app: Application) => {
-    const currentIdx = PIPELINE_STEPS.indexOf(app.status);
-    return (
-      <div className="flex items-center gap-1 mt-3">
-        {PIPELINE_STEPS.map((step, i) => {
-          const cfg = STATUS_CONFIG[step];
-          const isActive = i <= currentIdx;
-          return (
-            <React.Fragment key={step}>
-              <div
-                className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border transition-all ${
-                  isActive ? `${cfg.bg} ${cfg.color}` : 'bg-slate-900 border-slate-800 text-slate-600'
-                }`}
-              >
-                {cfg.icon} {cfg.label}
-              </div>
-              {i < PIPELINE_STEPS.length - 1 && (
-                <ArrowRight className={`w-3 h-3 ${i < currentIdx ? 'text-slate-500' : 'text-slate-800'}`} />
-              )}
-            </React.Fragment>
-          );
-        })}
-      </div>
-    );
-  };
-
-  const renderApplicationCard = (app: Application, showAdvance?: boolean) => {
-    const { project } = app;
-    const cfg = STATUS_CONFIG[app.status];
-    const usdValue = tokenToUsd(project.totalBudget, project.tokenType);
-    const nextStatus = PIPELINE_STEPS[PIPELINE_STEPS.indexOf(app.status) + 1];
+  const renderProposalCard = (proposal: Proposal, showWithdraw?: boolean) => {
+    const project = projectMap.get(String(proposal.projectId));
+    const cfg = PROPOSAL_STATUS_CONFIG[proposal.status];
 
     return (
       <div
-        key={app.id}
+        key={proposal.id}
         className="bg-[#0b0f19] rounded-xl border border-slate-800 hover:border-orange-500/30 transition-all duration-300 p-5 group"
       >
         <div className="flex justify-between items-start mb-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-slate-800 text-slate-300 border border-slate-700">
-                {project.category}
-              </span>
+              {project && (
+                <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-slate-800 text-slate-300 border border-slate-700">
+                  {project.category}
+                </span>
+              )}
               <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider border flex items-center gap-1 ${cfg.bg} ${cfg.color}`}>
                 {cfg.icon} {cfg.label}
               </span>
             </div>
-            <h3 className="text-white font-bold text-base uppercase tracking-tight">{project.title}</h3>
-            <p className="text-slate-500 text-xs mt-1 line-clamp-2">{project.description}</p>
+            <h3 className="text-white font-bold text-base uppercase tracking-tight">
+              {project?.title || `Project #${proposal.projectId}`}
+            </h3>
+            {project && (
+              <p className="text-slate-500 text-xs mt-1 line-clamp-2">{project.description}</p>
+            )}
           </div>
-          <div className="text-right ml-4 shrink-0">
-            <div className="text-lg font-black text-white">{formatUSD(usdValue)}</div>
-            <div className="text-[10px] text-slate-600 font-mono">
-              {project.totalBudget.toLocaleString()} {project.tokenType}
+          {project && (
+            <div className="text-right ml-4 shrink-0">
+              <div className="text-lg font-black text-white">
+                {formatUSD(tokenToUsd(project.totalBudget, project.tokenType))}
+              </div>
+              <div className="text-[10px] text-slate-600 font-mono">
+                {project.totalBudget.toLocaleString()} {project.tokenType}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        <div className="flex items-center gap-4 text-xs text-slate-500 mb-1">
+        <div className="flex items-center gap-4 text-xs text-slate-500 mb-3">
+          {project && (
+            <span className="flex items-center gap-1">
+              <FileText className="w-3 h-3" /> {project.milestones.length} milestones
+            </span>
+          )}
           <span className="flex items-center gap-1">
-            <FileText className="w-3 h-3" /> {project.milestones.length} milestones
+            <Clock className="w-3 h-3" /> Submitted {new Date(proposal.createdAt).toLocaleDateString()}
           </span>
-          <span className="flex items-center gap-1">
-            <Clock className="w-3 h-3" /> Applied {new Date(app.appliedAt).toLocaleDateString()}
-          </span>
-          {project.isFunded && (
+          {project?.isFunded && (
             <span className="flex items-center gap-1 text-emerald-500">
               <Shield className="w-3 h-3" /> Escrow Funded
             </span>
           )}
         </div>
 
-        {renderPipeline(app)}
+        {proposal.coverLetter && (
+          <div className="bg-slate-900/50 rounded-lg p-3 mb-3 border border-slate-800">
+            <p className="text-xs text-slate-400 italic line-clamp-3">"{proposal.coverLetter}"</p>
+          </div>
+        )}
 
-        {showAdvance && nextStatus && (
+        {showWithdraw && proposal.status === 'pending' && (
           <button
-            onClick={() => updateApplicationStatus(app.id, nextStatus)}
-            className="mt-4 w-full py-2.5 bg-slate-800 hover:bg-orange-600 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2"
+            onClick={() => withdrawProposal(proposal.id)}
+            disabled={isProcessing}
+            className="mt-2 w-full py-2.5 bg-slate-800 hover:bg-red-600/80 text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2"
           >
-            Move to {STATUS_CONFIG[nextStatus].label} <ArrowRight className="w-3 h-3" />
+            <Ban className="w-3 h-3" /> Withdraw Proposal
           </button>
         )}
       </div>
@@ -145,9 +137,9 @@ const FreelancerPage: React.FC = () => {
   );
 
   const tabs = [
-    { key: 'applied' as const,   label: 'Applied',   icon: <Send className="w-4 h-4" />,         count: appliedApps.length },
-    { key: 'active' as const,    label: 'Active',     icon: <Play className="w-4 h-4" />,         count: activeApps.length },
-    { key: 'completed' as const, label: 'Completed',  icon: <CheckCircle2 className="w-4 h-4" />, count: completedApps.length },
+    { key: 'applied' as const,   label: 'Pending',    icon: <Send className="w-4 h-4" />,         count: pendingProposals.length },
+    { key: 'active' as const,    label: 'Accepted',   icon: <CheckCircle2 className="w-4 h-4" />, count: acceptedProposals.length },
+    { key: 'completed' as const, label: 'Rejected',   icon: <XCircle className="w-4 h-4" />,      count: rejectedProposals.length },
     { key: 'earnings' as const,  label: 'Earnings',   icon: <DollarSign className="w-4 h-4" />,   count: null },
     { key: 'nft' as const,       label: 'NFT Badges', icon: <Award className="w-4 h-4" />,        count: null },
   ];
@@ -193,10 +185,10 @@ const FreelancerPage: React.FC = () => {
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Applied', value: appliedApps.length, color: 'text-blue-400', accent: 'border-blue-900/50' },
-          { label: 'Active', value: activeApps.length, color: 'text-orange-400', accent: 'border-orange-900/50' },
-          { label: 'Completed', value: completedApps.length, color: 'text-emerald-400', accent: 'border-emerald-900/50' },
-          { label: 'Earnings', value: formatUSD(totalEarnings), color: 'text-white', accent: 'border-slate-700' },
+          { label: 'Pending', value: pendingProposals.length, color: 'text-blue-400', accent: 'border-blue-900/50' },
+          { label: 'Accepted', value: acceptedProposals.length, color: 'text-emerald-400', accent: 'border-emerald-900/50' },
+          { label: 'Active Projects', value: myActiveProjects.length, color: 'text-orange-400', accent: 'border-orange-900/50' },
+          { label: 'Rejected', value: rejectedProposals.length, color: 'text-red-400', accent: 'border-red-900/50' },
         ].map((stat) => (
           <div key={stat.label} className={`bg-[#0b0f19] rounded-xl border ${stat.accent} p-4 text-center`}>
             <div className={`text-2xl font-black ${stat.color}`}>{stat.value}</div>
@@ -228,13 +220,13 @@ const FreelancerPage: React.FC = () => {
       {/* Tab content */}
       {freelancerDashboardTab === 'applied' && (
         <div className="space-y-4">
-          {appliedApps.length > 0 ? (
-            appliedApps.map((app) => renderApplicationCard(app, true))
+          {pendingProposals.length > 0 ? (
+            pendingProposals.map((p) => renderProposalCard(p, true))
           ) : (
             <EmptyState
               icon={Send}
-              title="No Applications Yet"
-              subtitle="Browse open projects on the marketplace and apply to start earning."
+              title="No Pending Proposals"
+              subtitle="Browse open projects on the marketplace and submit proposals to start earning."
             />
           )}
         </div>
@@ -242,13 +234,13 @@ const FreelancerPage: React.FC = () => {
 
       {freelancerDashboardTab === 'active' && (
         <div className="space-y-4">
-          {activeApps.length > 0 ? (
-            activeApps.map((app) => renderApplicationCard(app, true))
+          {acceptedProposals.length > 0 ? (
+            acceptedProposals.map((p) => renderProposalCard(p, false))
           ) : (
             <EmptyState
-              icon={Play}
-              title="No Active Contracts"
-              subtitle="Once a client accepts your application, active contracts will appear here."
+              icon={CheckCircle2}
+              title="No Accepted Proposals"
+              subtitle="Once a client accepts your proposal, it will appear here."
             />
           )}
         </div>
@@ -256,13 +248,13 @@ const FreelancerPage: React.FC = () => {
 
       {freelancerDashboardTab === 'completed' && (
         <div className="space-y-4">
-          {completedApps.length > 0 ? (
-            completedApps.map((app) => renderApplicationCard(app, false))
+          {rejectedProposals.length > 0 ? (
+            rejectedProposals.map((p) => renderProposalCard(p, false))
           ) : (
             <EmptyState
-              icon={CheckCircle2}
-              title="No Completed Work"
-              subtitle="Completed contracts with released escrow payments will show here."
+              icon={XCircle}
+              title="No Rejected or Withdrawn Proposals"
+              subtitle="Rejected and withdrawn proposals will appear here for your records."
             />
           )}
         </div>
@@ -276,53 +268,28 @@ const FreelancerPage: React.FC = () => {
                 <TrendingUp className="w-6 h-6 text-orange-500" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total Earnings</h3>
-                <div className="text-3xl font-black text-white">{formatUSD(totalEarnings)}</div>
+                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Active Projects</h3>
+                <div className="text-3xl font-black text-white">{myActiveProjects.length}</div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Completed Jobs</div>
-                <div className="text-xl font-black text-emerald-400">{completedApps.length}</div>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Active Projects</div>
+                <div className="text-xl font-black text-orange-400">{myActiveProjects.length}</div>
               </div>
               <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Active Jobs</div>
-                <div className="text-xl font-black text-orange-400">{activeApps.length}</div>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Proposals Sent</div>
+                <div className="text-xl font-black text-blue-400">{myProposals.length}</div>
               </div>
               <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Avg per Job</div>
-                <div className="text-xl font-black text-white">
-                  {completedApps.length > 0 ? formatUSD(totalEarnings / completedApps.length) : '$0.00'}
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Acceptance Rate</div>
+                <div className="text-xl font-black text-emerald-400">
+                  {myProposals.length > 0 ? Math.round((acceptedProposals.length / myProposals.length) * 100) : 0}%
                 </div>
               </div>
             </div>
           </div>
-
-          {completedApps.length > 0 && (
-            <div>
-              <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Payment History</h4>
-              <div className="bg-[#0b0f19] rounded-xl border border-slate-800 divide-y divide-slate-800">
-                {completedApps.map((app) => {
-                  const usd = tokenToUsd(app.project.totalBudget, app.project.tokenType);
-                  return (
-                    <div key={app.id} className="flex items-center justify-between p-4">
-                      <div>
-                        <div className="text-sm font-bold text-white">{app.project.title}</div>
-                        <div className="text-xs text-slate-500">{new Date(app.appliedAt).toLocaleDateString()}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-black text-emerald-400">+{formatUSD(usd)}</div>
-                        <div className="text-[10px] text-slate-600 font-mono">
-                          {app.project.totalBudget.toLocaleString()} {app.project.tokenType}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       )}
 

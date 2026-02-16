@@ -7,6 +7,7 @@ import {
 import { TokenType, Project } from '../types';
 import { usdToToken, EXCHANGE_RATES } from '../services/StacksService';
 import { useWallet } from './wallet/WalletProvider';
+import { useAppStore } from '../stores/useAppStore';
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ const emptyMilestone = (): MilestoneData => ({
 
 const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
   const { userAddress } = useWallet();
+  const storeCategories = useAppStore((s) => s.categories);
 
   const [step, setStep] = useState(0);
   const [projectTitle, setProjectTitle] = useState('');
@@ -447,12 +449,10 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                 >
-                  <option>Web Development</option>
-                  <option>Smart Contracts</option>
-                  <option>Design</option>
-                  <option>Auditing</option>
-                  <option>Writing</option>
-                  <option>Marketing</option>
+                  {storeCategories.length > 0
+                    ? storeCategories.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)
+                    : ['Web Development', 'Smart Contracts', 'Design', 'Auditing', 'Writing', 'Marketing'].map((n) => <option key={n}>{n}</option>)
+                  }
                 </select>
               </div>
 

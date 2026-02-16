@@ -1,8 +1,12 @@
 
 import React from 'react';
 import { Project, Milestone, MilestoneStatus } from '../types';
-import { Calendar, User, CheckCircle2, Clock, Lock, ArrowUpRight, AlertCircle, Shield } from 'lucide-react';
+import { Calendar, User, CheckCircle2, Clock, Lock, ArrowUpRight, AlertCircle, Shield, AlertTriangle, Star } from 'lucide-react';
 import { formatUSD, tokenToUsd } from '../services/StacksService';
+import { useAppStore } from '../stores/useAppStore';
+import type { BackendMilestoneSubmission } from '../lib/api';
+import DisputeModal from './DisputeModal';
+import ReviewModal from './ReviewModal';
 
 interface ProjectCardProps {
   project: Project;
@@ -12,9 +16,42 @@ interface ProjectCardProps {
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isProcessing }) => {
-  const [expanded, setExpanded] = React.useState(true); // Default expanded to show the 4 stages
+  const [expanded, setExpanded] = React.useState(true);
+  const [showDisputeModal, setShowDisputeModal] = React.useState(false);
+  const [showReviewModal, setShowReviewModal] = React.useState(false);
+  const { milestoneSubmissions, fetchMilestoneSubmissions, projectDisputes, fetchProjectDisputes } = useAppStore();
 
-  const completedMilestones = project.milestones.filter(m => m.status === 'approved').length;
+  // Fetch milestone submissions for active projects
+  React.useEffect(() => {
+    const numId = Number(project.id);
+    if (project.isFunded && numId) {
+      fetchMilestoneSubmissions(numId);
+      fetchProjectDisputes(numId);
+    }
+  }, [project.id, project.isFunded]);
+
+  const submissions = milestoneSubmissions[Number(project.id)] || [];
+  const disputes = projectDisputes[Number(project.id)] || [];
+  const hasOpenDispute = disputes.some(d => d.status === 'open');
+  const isActive = project.status === 'active';
+  const isCompleted = project.status === 'completed';
+
+  // Enrich milestone statuses from backend submissions
+  const enrichedMilestones = React.useMemo(() => {
+    return project.milestones.map((m) => {
+      const msubs = submissions.filter(s => s.milestoneNum === m.id);
+      if (msubs.length === 0) return m;
+      // Find latest submission
+      const latest = msubs.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())[0];
+      let status = m.status;
+      if (latest.status === 'approved') status = 'approved';
+      else if (latest.status === 'submitted') status = 'submitted';
+      else if (latest.status === 'rejected') status = 'pending'; // rejected = can resubmit
+      return { ...m, status, submissionLink: latest.deliverableUrl, submissionNote: latest.description };
+    });
+  }, [project.milestones, submissions]);
+
+  const completedMilestones = enrichedMilestones.filter(m => m.status === 'approved').length;
   const progress = (completedMilestones / 4) * 100;
 
   const usdValue = tokenToUsd(project.totalBudget, project.tokenType);
@@ -77,7 +114,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
           </div>
           <div className="grid grid-cols-4 gap-1 h-1.5 w-full">
             {[0, 1, 2, 3].map((idx) => {
-              const ms = project.milestones[idx];
+              const ms = enrichedMilestones[idx];
               const isRefunded = ms?.status === 'refunded';
               const isApproved = ms?.status === 'approved';
               return (
@@ -110,6 +147,31 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
               {isProcessing ? 'Confirming...' : 'Lock Funds (Escrow)'}
             </button>
           )}
+
+          {/* Dispute button — available on active projects */}
+          {isActive && !hasOpenDispute && (
+            <button
+              onClick={() => setShowDisputeModal(true)}
+              className="px-4 py-2 bg-red-950/40 text-red-400 text-xs font-bold uppercase tracking-wider rounded hover:bg-red-600 hover:text-white border border-red-900/30 transition-all flex items-center gap-1"
+            >
+              <AlertTriangle className="w-3 h-3" /> Dispute
+            </button>
+          )}
+          {hasOpenDispute && (
+            <span className="px-4 py-2 text-red-400 text-xs font-bold uppercase tracking-wider bg-red-950/20 border border-red-900/30 rounded flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" /> Dispute Open
+            </span>
+          )}
+
+          {/* Review button — available on completed projects */}
+          {isCompleted && (
+            <button
+              onClick={() => setShowReviewModal(true)}
+              className="px-4 py-2 bg-orange-950/40 text-orange-400 text-xs font-bold uppercase tracking-wider rounded hover:bg-orange-600 hover:text-white border border-orange-900/30 transition-all flex items-center gap-1"
+            >
+              <Star className="w-3 h-3" /> Leave Review
+            </button>
+          )}
         </div>
 
         {expanded && (
@@ -117,7 +179,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
             {/* Connector Line */}
             <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-800 -z-10"></div>
 
-            {project.milestones.map((milestone, index) => (
+            {enrichedMilestones.map((milestone, index) => (
               <MilestoneItem
                 key={milestone.id}
                 index={index}
@@ -126,11 +188,33 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
                 role={role}
                 onAction={onAction}
                 isProcessing={isProcessing}
+                submissions={submissions.filter(s => s.milestoneNum === index + 1)}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Dispute Modal */}
+      {showDisputeModal && (
+        <DisputeModal
+          projectId={Number(project.id)}
+          projectTitle={project.title}
+          milestoneCount={project.milestones.length}
+          onClose={() => setShowDisputeModal(false)}
+        />
+      )}
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <ReviewModal
+          projectId={Number(project.id)}
+          projectTitle={project.title}
+          revieweeId={role === 'client' ? (project.freelancerId || 0) : (project.clientId || 0)}
+          revieweeName={role === 'client' ? project.freelancerAddress : project.clientAddress}
+          onClose={() => setShowReviewModal(false)}
+        />
+      )}
     </div>
   );
 };
@@ -143,8 +227,14 @@ const MilestoneItem: React.FC<{
   role: 'client' | 'freelancer';
   onAction: (projectId: string, actionType: string, payload?: any) => void;
   isProcessing?: boolean;
-}> = ({ index, milestone, project, role, onAction, isProcessing }) => {
+  submissions: BackendMilestoneSubmission[];
+}> = ({ index, milestone, project, role, onAction, isProcessing, submissions }) => {
   const [submissionLink, setSubmissionLink] = React.useState('');
+
+  // Get the latest submission for this milestone
+  const latestSubmission = submissions.length > 0
+    ? submissions.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())[0]
+    : null;
 
   const handleFreelancerSubmit = () => {
     if (!submissionLink) return;
@@ -218,19 +308,35 @@ const MilestoneItem: React.FC<{
             </div>
           )}
 
-          {role === 'client' && milestone.status === 'submitted' && (
+          {role === 'client' && milestone.status === 'submitted' && latestSubmission && (
             <div className="mt-3 bg-[#05080f] p-3 rounded border border-slate-700/50">
-              <p className="text-xs text-slate-400 mb-3 font-mono">
+              <p className="text-xs text-slate-400 mb-2 font-mono">
                 <span className="font-bold text-slate-300">Deliverable:</span>
-                <a href="#" className="text-orange-500 hover:underline ml-2 break-all">{milestone.submissionLink || "View Work"}</a>
+                <a href={latestSubmission.deliverableUrl} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:underline ml-2 break-all">
+                  {latestSubmission.deliverableUrl}
+                </a>
               </p>
-              <button
-                onClick={() => onAction(project.id, 'approve_milestone', { milestoneId: milestone.id })}
-                disabled={isProcessing}
-                className="w-full px-3 py-2 bg-green-600 text-white text-xs font-bold uppercase tracking-wider rounded hover:bg-green-500 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isProcessing ? 'Verifying on Chain...' : 'Approve & Release Funds'}
-              </button>
+              {latestSubmission.description && (
+                <p className="text-xs text-slate-500 mb-3 font-mono">
+                  <span className="font-bold text-slate-400">Note:</span> {latestSubmission.description}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onAction(project.id, 'approve_milestone', { submissionId: latestSubmission.id, milestoneId: milestone.id, releaseTxId: 'pending' })}
+                  disabled={isProcessing}
+                  className="flex-1 px-3 py-2 bg-green-600 text-white text-xs font-bold uppercase tracking-wider rounded hover:bg-green-500 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isProcessing ? 'Verifying...' : 'Approve & Release'}
+                </button>
+                <button
+                  onClick={() => onAction(project.id, 'reject_milestone', { submissionId: latestSubmission.id, milestoneId: milestone.id })}
+                  disabled={isProcessing}
+                  className="px-3 py-2 bg-red-600/80 text-white text-xs font-bold uppercase tracking-wider rounded hover:bg-red-500 disabled:opacity-50"
+                >
+                  Reject
+                </button>
+              </div>
             </div>
           )}
 

@@ -1,8 +1,10 @@
 
 import React from 'react';
 import { FreelancerProfile as FreelancerProfileType, Gig } from '../types';
-import { ShieldCheck, Trophy, MapPin, Star, Calendar, ArrowLeft, Mail, ExternalLink, Briefcase, Coins, CheckCircle, Award, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Trophy, MapPin, Star, Calendar, ArrowLeft, Mail, ExternalLink, Briefcase, Coins, CheckCircle, Award, CheckCircle2, MessageSquare } from 'lucide-react';
 import { formatUSD } from '../services/StacksService';
+import { useAppStore } from '../stores/useAppStore';
+import type { BackendReview } from '../lib/api';
 
 interface FreelancerProfileProps {
   profile: FreelancerProfileType;
@@ -13,6 +15,17 @@ interface FreelancerProfileProps {
 }
 
 const FreelancerProfile: React.FC<FreelancerProfileProps> = ({ profile, gigs, onBack, onHire, onContact }) => {
+  const { profileReviews, fetchProfileReviews } = useAppStore();
+
+  // Fetch real reviews for this profile
+  React.useEffect(() => {
+    if (profile.address) {
+      fetchProfileReviews(profile.address);
+    }
+  }, [profile.address]);
+
+  const reviews = profileReviews[profile.address] || [];
+
   // Filter gigs for this freelancer
   const freelancerGigs = gigs.filter(g =>
     g.freelancerAddress === profile.address ||
@@ -175,6 +188,41 @@ const FreelancerProfile: React.FC<FreelancerProfileProps> = ({ profile, gigs, on
               </div>
             </div>
           )}
+
+          {/* Reviews Section */}
+          <div className="bg-[#0b0f19] p-8 rounded-xl border border-slate-800">
+            <h3 className="text-lg font-black text-white uppercase tracking-tight mb-4 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-slate-500" /> Reviews ({reviews.length})
+            </h3>
+            {reviews.length > 0 ? (
+              <div className="space-y-4">
+                {reviews.map((review: BackendReview) => (
+                  <div key={review.id} className="p-4 bg-[#05080f] border border-slate-800/50 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={`w-3.5 h-3.5 ${s <= review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-700'}`}
+                          />
+                        ))}
+                        <span className="ml-2 text-xs font-bold text-slate-400">{review.rating}/5</span>
+                      </div>
+                      <span className="text-[10px] text-slate-600 font-mono">
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {review.comment && (
+                      <p className="text-sm text-slate-400 leading-relaxed">{review.comment}</p>
+                    )}
+                    <div className="text-[10px] text-slate-600 mt-2">Project #{review.projectId}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-500 text-sm">No reviews yet.</p>
+            )}
+          </div>
         </div>
 
         {/* Right Column: Active Gigs */}

@@ -9,6 +9,7 @@ export type MilestoneStatus = 'locked' | 'pending' | 'submitted' | 'approved' | 
 
 export type ApplicationStatus = 'applied' | 'accepted' | 'in-progress' | 'completed';
 
+/** @deprecated Use Proposal instead */
 export interface Application {
   id: string;
   projectId: string;
@@ -17,6 +18,23 @@ export interface Application {
   appliedAt: string;
   coverLetter?: string;
   project: Project;
+}
+
+// ── Proposal (backend-aligned) ──
+
+export type ProposalStatus = 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+
+export interface Proposal {
+  id: number;
+  projectId: number;
+  freelancerId: number;
+  coverLetter: string;
+  status: ProposalStatus;
+  createdAt: string;
+  updatedAt: string;
+  // Enriched on the frontend after fetching
+  project?: Project;
+  freelancerAddress?: string;
 }
 
 export type MessageType = 'text' | 'audio' | 'file' | 'offer';
@@ -66,13 +84,15 @@ export interface Project {
   category: string;
   clientAddress: string;
   freelancerAddress: string;
+  clientId?: number;
+  freelancerId?: number;
   tokenType: TokenType;
   totalBudget: number;
   isFunded: boolean;
   createdAt: string;
   milestones: Milestone[];
-  attachments?: string[]; // Added attachments field
-  status?: 'active' | 'completed' | 'disputed' | 'cancelled';
+  attachments?: string[];
+  status?: 'open' | 'active' | 'completed' | 'disputed' | 'cancelled' | 'refunded';
 }
 
 export interface Gig {

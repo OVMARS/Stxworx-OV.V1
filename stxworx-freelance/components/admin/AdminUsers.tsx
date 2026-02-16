@@ -1,15 +1,37 @@
 
 import React, { useEffect, useState } from 'react';
-import { AdminUser } from '../../types';
-import { MoreHorizontal, Shield, Ban, CheckCircle } from 'lucide-react';
-import { fetchAdminUsers } from '../../services/StacksService';
+import { Ban, CheckCircle, RefreshCw } from 'lucide-react';
+import { useAppStore } from '../../stores/useAppStore';
 
 const AdminUsers: React.FC = () => {
-   const [users, setUsers] = useState<AdminUser[]>([]);
+   const { adminUsers, fetchAdminUsers, toggleUserStatus } = useAppStore();
+   const [search, setSearch] = useState('');
+   const [toggling, setToggling] = useState<number | null>(null);
 
    useEffect(() => {
-      fetchAdminUsers().then(setUsers);
+      fetchAdminUsers();
    }, []);
+
+   const handleToggle = async (userId: number, currentlyActive: boolean) => {
+      setToggling(userId);
+      try {
+         await toggleUserStatus(userId, !currentlyActive);
+      } catch (e) {
+         console.error(e);
+      } finally {
+         setToggling(null);
+      }
+   };
+
+   const filtered = adminUsers.filter((u) => {
+      const term = search.toLowerCase();
+      return (
+         !term ||
+         u.username?.toLowerCase().includes(term) ||
+         u.stxAddress?.toLowerCase().includes(term) ||
+         u.role?.toLowerCase().includes(term)
+      );
+   });
 
    return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -22,9 +44,13 @@ const AdminUsers: React.FC = () => {
                <input
                   type="text"
                   placeholder="Search users..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
                   className="bg-[#0b0f19] border border-slate-800 rounded-lg px-4 py-2 text-sm text-white focus:border-orange-500 focus:outline-none"
                />
-               <button className="px-4 py-2 bg-slate-800 text-white text-sm font-bold uppercase rounded-lg hover:bg-slate-700">Filter</button>
+               <button onClick={() => fetchAdminUsers()} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors">
+                  <RefreshCw className="w-4 h-4" />
+               </button>
             </div>
          </div>
 
@@ -32,57 +58,58 @@ const AdminUsers: React.FC = () => {
             <table className="w-full text-left border-collapse">
                <thead>
                   <tr className="text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-800 bg-slate-900/50">
+                     <th className="px-6 py-4">ID</th>
                      <th className="px-6 py-4">User</th>
                      <th className="px-6 py-4">Role</th>
                      <th className="px-6 py-4">Status</th>
-                     <th className="px-6 py-4">Earnings</th>
-                     <th className="px-6 py-4">Reports</th>
+                     <th className="px-6 py-4">Joined</th>
                      <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
                </thead>
                <tbody className="divide-y divide-slate-800">
-                  {users.map((user) => (
+                  {filtered.map((user) => (
                      <tr key={user.id} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="px-6 py-4 text-xs font-mono text-slate-500">#{user.id}</td>
                         <td className="px-6 py-4">
                            <div className="flex flex-col">
-                              <span className="font-bold text-white">{user.name}</span>
-                              <span className="text-xs text-slate-500 font-mono">{user.address}</span>
+                              <span className="font-bold text-white">{user.username || 'N/A'}</span>
+                              <span className="text-xs text-slate-500 font-mono">{user.stxAddress?.slice(0, 12)}...</span>
                            </div>
                         </td>
                         <td className="px-6 py-4">
-                           <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${user.role === 'Freelancer' ? 'bg-blue-500/10 text-blue-500' : 'bg-purple-500/10 text-purple-500'
-                              }`}>
+                           <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${user.role === 'freelancer' ? 'bg-blue-500/10 text-blue-500' : 'bg-purple-500/10 text-purple-500'}`}>
                               {user.role}
                            </span>
                         </td>
                         <td className="px-6 py-4">
-                           <span className={`flex items-center gap-1.5 text-xs font-bold ${user.status === 'Active' ? 'text-green-500' :
-                              user.status === 'Banned' ? 'text-red-500' : 'text-amber-500'
-                              }`}>
-                              {user.status === 'Active' && <CheckCircle className="w-3 h-3" />}
-                              {user.status === 'Banned' && <Ban className="w-3 h-3" />}
-                              {user.status}
+                           <span className={`flex items-center gap-1.5 text-xs font-bold ${user.isActive ? 'text-green-500' : 'text-red-500'}`}>
+                              {user.isActive ? <CheckCircle className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                              {user.isActive ? 'Active' : 'Banned'}
                            </span>
                         </td>
-                        <td className="px-6 py-4 text-sm font-mono text-slate-300">
-                           ${user.earnings.toLocaleString()}
-                        </td>
-                        <td className="px-6 py-4">
-                           {user.reports > 0 ? (
-                              <span className="text-red-500 font-bold flex items-center gap-1">
-                                 {user.reports} Reports
-                              </span>
-                           ) : (
-                              <span className="text-slate-600">-</span>
-                           )}
+                        <td className="px-6 py-4 text-xs text-slate-500">
+                           {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}
                         </td>
                         <td className="px-6 py-4 text-right">
-                           <button className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-full transition-colors">
-                              <MoreHorizontal className="w-5 h-5" />
+                           <button
+                              onClick={() => handleToggle(user.id, user.isActive)}
+                              disabled={toggling === user.id}
+                              className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                                 user.isActive
+                                    ? 'bg-red-600/10 hover:bg-red-600/20 text-red-500 border border-red-600/20'
+                                    : 'bg-green-600/10 hover:bg-green-600/20 text-green-500 border border-green-600/20'
+                              } disabled:opacity-50`}
+                           >
+                              {toggling === user.id ? '...' : user.isActive ? 'Ban' : 'Unban'}
                            </button>
                         </td>
                      </tr>
                   ))}
+                  {filtered.length === 0 && (
+                     <tr>
+                        <td colSpan={6} className="px-6 py-12 text-center text-slate-500">No users found.</td>
+                     </tr>
+                  )}
                </tbody>
             </table>
          </div>

@@ -2,21 +2,25 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
 import GigCard from '../components/GigCard';
-import { Search, Briefcase, Layers, Clock, DollarSign, Send, CheckCircle2 } from 'lucide-react';
+import { Search, Briefcase, Layers, Clock, DollarSign, Send, CheckCircle2, X } from 'lucide-react';
 import { formatUSD, tokenToUsd } from '../services/StacksService';
 import { Project } from '../types';
-
-const CATEGORIES = ['All', 'Smart Contracts', 'Web Development', 'Design', 'Auditing', 'Writing'];
 
 type BrowseTab = 'gigs' | 'projects';
 
 const BrowsePage: React.FC = () => {
   const navigate = useNavigate();
   const [browseTab, setBrowseTab] = useState<BrowseTab>('gigs');
+  const [applyTarget, setApplyTarget] = useState<Project | null>(null);
+  const [coverLetter, setCoverLetter] = useState('');
+  const [applyLoading, setApplyLoading] = useState(false);
   const {
     filteredGigs, projects, selectedCategory, setSelectedCategory,
-    openHireModal, wallet, userRole, applications, applyToProject,
+    openHireModal, wallet, userRole, applyToProject, hasAppliedToProject,
+    categories, isProcessing,
   } = useAppStore();
+
+  const CATEGORIES = ['All', ...categories.map((c) => c.name)];
 
   const openProjects = useMemo(() => {
     let result = projects.filter((p) => !p.freelancerAddress || p.freelancerAddress === '');
@@ -25,9 +29,6 @@ const BrowsePage: React.FC = () => {
     }
     return result;
   }, [projects, selectedCategory]);
-
-  const hasApplied = (projectId: string) =>
-    applications.some((a) => a.projectId === projectId && a.freelancerAddress === wallet.address);
 
   const handleViewProfile = (address: string, name?: string) => {
     useAppStore.getState().viewProfileByAddress(address, name).then(() => navigate('/profile'));
@@ -43,9 +44,19 @@ const BrowsePage: React.FC = () => {
     navigate('/gig');
   };
 
-  const handleApply = (project: Project) => {
-    if (!wallet.isConnected || hasApplied(project.id)) return;
-    applyToProject(project);
+  const handleApplyClick = (project: Project) => {
+    if (!wallet.isConnected || hasAppliedToProject(project.id)) return;
+    setApplyTarget(project);
+    setCoverLetter('');
+  };
+
+  const handleSubmitProposal = async () => {
+    if (!applyTarget || !coverLetter.trim()) return;
+    setApplyLoading(true);
+    await applyToProject(applyTarget, coverLetter.trim());
+    setApplyLoading(false);
+    setApplyTarget(null);
+    setCoverLetter('');
   };
 
   const itemCount = browseTab === 'gigs' ? filteredGigs.length : openProjects.length;
@@ -119,7 +130,7 @@ const BrowsePage: React.FC = () => {
       ) : openProjects.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {openProjects.map((project) => {
-            const applied = hasApplied(project.id);
+            const applied = hasAppliedToProject(project.id);
             const usdValue = tokenToUsd(project.totalBudget, project.tokenType);
             return (
               <div
@@ -170,7 +181,7 @@ const BrowsePage: React.FC = () => {
 
                   {userRole === 'freelancer' && wallet.isConnected && (
                     <button
-                      onClick={() => handleApply(project)}
+                      onClick={() => handleApplyClick(project)}
                       disabled={applied}
                       className={`w-full py-3 rounded-xl text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
                         applied
@@ -201,6 +212,58 @@ const BrowsePage: React.FC = () => {
           <Briefcase className="w-16 h-16 mb-4 opacity-20" />
           <p className="text-lg font-bold">No open projects</p>
           <p className="text-sm">Check back later for new client contracts</p>
+        </div>
+      )}
+
+      {/* Cover Letter Modal */}
+      {applyTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#0d1117] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-6 border-b border-slate-800">
+              <div>
+                <h3 className="text-lg font-black text-white uppercase tracking-tight">Submit Proposal</h3>
+                <p className="text-xs text-slate-500 mt-1">{applyTarget.title}</p>
+              </div>
+              <button
+                onClick={() => setApplyTarget(null)}
+                className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                Cover Letter <span className="text-orange-500">*</span>
+              </label>
+              <textarea
+                value={coverLetter}
+                onChange={(e) => setCoverLetter(e.target.value)}
+                rows={5}
+                placeholder="Describe your relevant experience, approach, and why you're a great fit for this project..."
+                className="w-full bg-[#0b0f19] border border-slate-800 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 resize-none"
+              />
+              <p className="text-[10px] text-slate-600 mt-1">{coverLetter.length} characters</p>
+            </div>
+            <div className="flex gap-3 p-6 pt-0">
+              <button
+                onClick={() => setApplyTarget(null)}
+                className="flex-1 py-3 rounded-xl text-sm font-bold uppercase tracking-wider bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitProposal}
+                disabled={!coverLetter.trim() || applyLoading}
+                className="flex-1 py-3 rounded-xl text-sm font-bold uppercase tracking-wider bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-900/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {applyLoading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <><Send className="w-4 h-4" /> Submit Proposal</>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

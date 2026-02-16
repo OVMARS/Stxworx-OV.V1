@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Hexagon, LayoutDashboard, Users, CheckSquare, Briefcase, MessageSquare, Database, LogOut, Search, Bell, MessageCircle } from 'lucide-react';
 import AdminUsers from './admin/AdminUsers';
 import AdminJobs from './admin/AdminJobs';
@@ -7,6 +7,7 @@ import AdminApprovals from './admin/AdminApprovals';
 import AdminSupport from './admin/AdminSupport';
 import AdminNFT from './admin/AdminNFT';
 import AdminChats from './admin/AdminChats';
+import { useAppStore } from '../stores/useAppStore';
 
 interface AdminPanelProps {
   onLogout: () => void;
@@ -16,6 +17,11 @@ type AdminTab = 'overview' | 'users' | 'jobs' | 'chats' | 'approvals' | 'support
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+  const { adminDashboardStats, fetchDashboardStats, adminUser } = useAppStore();
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
 
   const NavItem = ({ tab, icon: Icon, label }: { tab: AdminTab; icon: any; label: string }) => (
     <button
@@ -47,24 +53,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
               {/* Stat Cards */}
               <div className="bg-[#0b0f19] p-6 rounded-2xl border border-slate-800 relative overflow-hidden">
                  <div className="absolute top-0 right-0 p-16 bg-orange-600/5 rounded-full blur-2xl"></div>
-                 <div className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Total Volume</div>
-                 <div className="text-3xl font-black text-white">$1.2M</div>
-                 <div className="text-green-500 text-xs font-bold mt-2 flex items-center gap-1">+12.5% this week</div>
+                 <div className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Total Users</div>
+                 <div className="text-3xl font-black text-white">{adminDashboardStats?.totalUsers ?? '—'}</div>
+                 <div className="text-slate-500 text-xs font-bold mt-2">Registered accounts</div>
               </div>
               <div className="bg-[#0b0f19] p-6 rounded-2xl border border-slate-800">
-                 <div className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Active Jobs</div>
-                 <div className="text-3xl font-black text-white">42</div>
-                 <div className="text-slate-500 text-xs font-bold mt-2">12 pending completion</div>
+                 <div className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Total Projects</div>
+                 <div className="text-3xl font-black text-white">{adminDashboardStats?.totalProjects ?? '—'}</div>
+                 <div className="text-slate-500 text-xs font-bold mt-2">All time</div>
+              </div>
+              <div className="bg-[#0b0f19] p-6 rounded-2xl border border-slate-800">
+                 <div className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Active Projects</div>
+                 <div className="text-3xl font-black text-white text-blue-500">{adminDashboardStats?.activeProjects ?? '—'}</div>
+                 <div className="text-blue-400/60 text-xs font-bold mt-2">Currently in progress</div>
               </div>
               <div className="bg-[#0b0f19] p-6 rounded-2xl border border-slate-800">
                  <div className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Open Disputes</div>
-                 <div className="text-3xl font-black text-white text-red-500">3</div>
+                 <div className="text-3xl font-black text-white text-red-500">{adminDashboardStats?.openDisputes ?? '—'}</div>
                  <div className="text-red-400/60 text-xs font-bold mt-2">Requires attention</div>
-              </div>
-              <div className="bg-[#0b0f19] p-6 rounded-2xl border border-slate-800">
-                 <div className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">New Users</div>
-                 <div className="text-3xl font-black text-white">156</div>
-                 <div className="text-green-500 text-xs font-bold mt-2">+24 today</div>
               </div>
 
               {/* Recent Activity Section could go here */}
@@ -149,7 +155,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                   <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
                </button>
                <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold text-xs border-2 border-slate-900">
-                  AD
+                  {(adminUser?.username || 'AD').slice(0, 2).toUpperCase()}
                </div>
             </div>
          </header>

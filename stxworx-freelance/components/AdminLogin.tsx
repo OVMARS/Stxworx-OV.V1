@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Hexagon, Lock, User, ArrowRight, ShieldAlert } from 'lucide-react';
+import { useAppStore } from '../stores/useAppStore';
 
 interface AdminLoginProps {
   onLogin: () => void;
@@ -8,25 +9,24 @@ interface AdminLoginProps {
 }
 
 const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const adminLogin = useAppStore((s) => s.adminLogin);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Mock Authentication
-    setTimeout(() => {
-      if (email === 'admin@stxworx.com' && password === 'admin123') {
-        onLogin();
-      } else {
-        setError('Invalid credentials. Hint: admin@stxworx.com / admin123');
-        setLoading(false);
-      }
-    }, 1000);
+    try {
+      await adminLogin(username, password);
+      onLogin();
+    } catch (err: any) {
+      setError(err?.message || 'Invalid credentials');
+      setLoading(false);
+    }
   };
 
   return (
@@ -61,11 +61,11 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
                <div className="relative">
                   <User className="absolute left-3 top-2.5 w-5 h-5 text-slate-600" />
                   <input 
-                    type="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    type="text" 
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-10 pr-4 text-white focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 transition-colors"
-                    placeholder="admin@stxworx.com"
+                    placeholder="admin"
                     required
                   />
                </div>

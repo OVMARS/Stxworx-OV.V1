@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { X, Zap, Image as ImageIcon, DollarSign, Clock, Tag } from 'lucide-react';
 import { Gig } from '../types';
+import { useAppStore } from '../stores/useAppStore';
 
 interface CreateGigModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface CreateGigModalProps {
 }
 
 const CreateGigModal: React.FC<CreateGigModalProps> = ({ isOpen, onClose, onSubmit }) => {
+  const categories = useAppStore((s) => s.categories);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -75,12 +77,10 @@ const CreateGigModal: React.FC<CreateGigModalProps> = ({ isOpen, onClose, onSubm
                     value={formData.category}
                     onChange={(e) => setFormData({...formData, category: e.target.value})}
                   >
-                    <option>Web Development</option>
-                    <option>Smart Contracts</option>
-                    <option>Design</option>
-                    <option>Auditing</option>
-                    <option>Writing</option>
-                    <option>Marketing</option>
+                    {categories.length > 0
+                      ? categories.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)
+                      : ['Web Development', 'Smart Contracts', 'Design', 'Auditing', 'Writing', 'Marketing'].map((n) => <option key={n}>{n}</option>)
+                    }
                   </select>
                 </div>
 
