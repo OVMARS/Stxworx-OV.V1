@@ -54,7 +54,9 @@
 (define-map badge-metadata uint {
   grade: uint,
   owner: principal,
-  minted-at: uint
+  minted-at: uint,
+  ipfs-cid: (string-ascii 64)
+
 })
 
 ;; Reverse lookup: principal -> their grade token info (one grade per user)
@@ -66,7 +68,9 @@
 ;; Verified metadata: token-id -> details
 (define-map verified-metadata uint {
   owner: principal,
-  minted-at: uint
+  minted-at: uint,
+  ipfs-cid: (string-ascii 64)
+
 })
 
 ;; Reverse lookup: principal -> their verified token-id (one per user)
@@ -94,12 +98,13 @@
 ;; ======================== PUBLIC: GRADE BADGE ========================
 
 ;; Admin mints a grade badge for a user (one per user)
-(define-public (admin-mint-grade (recipient principal) (grade uint))
+(define-public (admin-mint-grade (recipient principal) (grade uint) (ipfs-cid (string-ascii 64)))
   (begin
     (try! (check-not-paused))
     (asserts! (is-admin) ERR-NOT-ADMIN)
     (asserts! (is-valid-grade grade) ERR-INVALID-GRADE)
     (asserts! (is-none (map-get? user-grade recipient)) ERR-ALREADY-HAS-GRADE)
+    (asserts! (> (len ipfs-cid) u0) ERR-INVALID-GRADE)
     (let (
       (new-id (+ (var-get badge-id-nonce) u1))
     )
@@ -108,7 +113,9 @@
       (map-set badge-metadata new-id {
         grade: grade,
         owner: recipient,
-        minted-at: burn-block-height
+        minted-at: burn-block-height,
+        ipfs-cid: ipfs-cid
+
       })
       (map-set user-grade recipient {
         token-id: new-id,
@@ -118,7 +125,8 @@
         event: "grade-minted",
         token-id: new-id,
         recipient: recipient,
-        grade: grade
+        grade: grade,
+        ipfs-cid: ipfs-cid
       })
       (ok new-id)
     )
@@ -126,11 +134,13 @@
 )
 
 ;; Admin upgrades a user's grade (burns old, mints new - must be higher)
-(define-public (admin-upgrade-grade (user principal) (new-grade uint))
+(define-public (admin-upgrade-grade (user principal) (new-grade uint) (ipfs-cid (string-ascii 64)))
   (begin
     (try! (check-not-paused))
     (asserts! (is-admin) ERR-NOT-ADMIN)
+    (asserts! (> (len ipfs-cid) u0) ERR-INVALID-GRADE)
     (asserts! (is-valid-grade new-grade) ERR-INVALID-GRADE)
+    (asserts! (is-some (map-get? user-grade user)) ERR-NO-GRADE)
     (let (
       (current-info (unwrap! (map-get? user-grade user) ERR-NO-GRADE))
       (old-token-id (get token-id current-info))
@@ -149,7 +159,9 @@
         (map-set badge-metadata new-id {
           grade: new-grade,
           owner: user,
-          minted-at: burn-block-height
+          minted-at: burn-block-height,
+          ipfs-cid: ipfs-cid
+
         })
         (map-set user-grade user {
           token-id: new-id,
@@ -173,6 +185,7 @@
   (begin
     (try! (check-not-paused))
     (asserts! (is-admin) ERR-NOT-ADMIN)
+    (asserts! (is-some (map-get? user-grade user)) ERR-NO-GRADE)
     (let (
       (current-info (unwrap! (map-get? user-grade user) ERR-NO-GRADE))
       (token-id (get token-id current-info))
@@ -190,13 +203,29 @@
   )
 )
 
+;; Admin updates a badge's IPFS CID (e.g. new image/metadata)
+(define-public (admin-update-badge-cid (token-id uint) (new-cid (string-ascii 64)))
+  (begin
+    (asserts! (is-admin) ERR-NOT-ADMIN)
+    (let (
+      (info (unwrap! (map-get? badge-metadata token-id) ERR-NO-GRADE))
+    )
+      (map-set badge-metadata token-id (merge info { ipfs-cid: new-cid }))
+      (print { event: "badge-cid-updated", token-id: token-id, new-cid: new-cid })
+      (ok true)
+    )
+  )
+)
+
+
+
 ;; ======================== PUBLIC: VERIFIED BADGE ========================
 
 ;; Backend mints a verified badge for a user (one per user)
-(define-public (mint-verified (recipient principal))
+(define-public (mint-verified (recipient principal) (ipfs-cid (string-ascii 64)))
   (begin
     (try! (check-not-paused))
-    (asserts! (is-backend) ERR-NOT-BACKEND)
+    (asserts! (is-admin) ERR-NOT-ADMIN)
     (asserts! (is-none (map-get? user-verified recipient)) ERR-ALREADY-VERIFIED)
     (let (
       (new-id (+ (var-get verified-id-nonce) u1))
@@ -205,13 +234,15 @@
       (var-set verified-id-nonce new-id)
       (map-set verified-metadata new-id {
         owner: recipient,
-        minted-at: burn-block-height
+        minted-at: burn-block-height,
+        ipfs-cid: ipfs-cid
       })
       (map-set user-verified recipient new-id)
       (print {
         event: "verified-minted",
         token-id: new-id,
-        recipient: recipient
+        recipient: recipient,
+        ipfs-cid: ipfs-cid
       })
       (ok new-id)
     )
@@ -258,8 +289,12 @@
 )
 
 (define-read-only (get-token-uri (token-id uint))
-  (ok (some (var-get badge-base-uri)))
+  (match (map-get? badge-metadata token-id)
+    info (ok (some (concat "ipfs://" (get ipfs-cid info))))
+    (ok none)
+  )
 )
+
 
 (define-read-only (get-owner (token-id uint))
   (ok (nft-get-owner? stxworx-badge token-id))
@@ -271,7 +306,10 @@
 )
 
 (define-read-only (get-verified-uri (token-id uint))
-  (ok (some (var-get verified-base-uri)))
+  (match (map-get? verified-metadata token-id)
+    info (ok (some (concat "ipfs://" (get ipfs-cid info))))
+    (ok none)
+  )
 )
 
 (define-read-only (get-verified-owner (token-id uint))

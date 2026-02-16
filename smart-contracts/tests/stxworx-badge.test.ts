@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Cl, ClarityType } from "@stacks/transactions";
 
-const CONTRACT = "stxworx-badge-v1";
+const CONTRACT = "stxworx-v1";
 
 const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
@@ -14,6 +14,14 @@ const GRADE_BRONZE = 1;
 const GRADE_SILVER = 2;
 const GRADE_GOLD = 3;
 const GRADE_PLATINUM = 4;
+
+// Test IPFS CIDs
+const CID_BRONZE = "QmBronzeCID1234567890abcdefghijklmnopqrstuvwx";
+const CID_SILVER = "QmSilverCID1234567890abcdefghijklmnopqrstuvwx";
+const CID_GOLD = "QmGoldCIDxx1234567890abcdefghijklmnopqrstuvwx";
+const CID_PLATINUM = "QmPlatinumCID34567890abcdefghijklmnopqrstuvwx";
+const CID_VERIFIED = "QmVerifiedCID234567890abcdefghijklmnopqrstuvw";
+const CID_UPDATED = "QmUpdatedCID234567890abcdefghijklmnopqrstuvwx";
 
 // Error codes
 const ERR_NOT_ADMIN = 200;
@@ -34,20 +42,20 @@ const ERR_NO_PENDING_ADMIN = 212;
 // Helpers
 // ============================================================
 
-function mintGrade(sender: string, recipient: string, grade: number) {
+function mintGrade(sender: string, recipient: string, grade: number, cid: string = CID_BRONZE) {
   return simnet.callPublicFn(
     CONTRACT,
     "admin-mint-grade",
-    [Cl.principal(recipient), Cl.uint(grade)],
+    [Cl.principal(recipient), Cl.uint(grade), Cl.stringAscii(cid)],
     sender
   );
 }
 
-function upgradeGrade(sender: string, user: string, newGrade: number) {
+function upgradeGrade(sender: string, user: string, newGrade: number, cid: string = CID_SILVER) {
   return simnet.callPublicFn(
     CONTRACT,
     "admin-upgrade-grade",
-    [Cl.principal(user), Cl.uint(newGrade)],
+    [Cl.principal(user), Cl.uint(newGrade), Cl.stringAscii(cid)],
     sender
   );
 }
@@ -61,11 +69,11 @@ function revokeGrade(sender: string, user: string) {
   );
 }
 
-function mintVerified(sender: string, recipient: string) {
+function mintVerified(sender: string, recipient: string, cid: string = CID_VERIFIED) {
   return simnet.callPublicFn(
     CONTRACT,
     "mint-verified",
-    [Cl.principal(recipient)],
+    [Cl.principal(recipient), Cl.stringAscii(cid)],
     sender
   );
 }
@@ -247,9 +255,9 @@ describe("Verified Badge", () => {
     expect(result).toBeOk(Cl.uint(1));
   });
 
-  it("should reject verified mint from non-backend", () => {
+  it("should reject verified mint from non-admin", () => {
     const { result } = mintVerified(wallet1, wallet2);
-    expect(result).toBeErr(Cl.uint(ERR_NOT_BACKEND));
+    expect(result).toBeErr(Cl.uint(ERR_NOT_ADMIN));
   });
 
   it("should reject duplicate verified badge", () => {
@@ -389,9 +397,6 @@ describe("Configuration", () => {
       deployer
     );
     expect(result).toBeOk(Cl.bool(true));
-    // Now wallet3 can mint verified
-    const { result: mintResult } = mintVerified(wallet3, wallet1);
-    expect(mintResult).toBeOk(Cl.uint(1));
   });
 
   it("should reject set-backend-address from non-admin", () => {
@@ -509,8 +514,8 @@ describe("Configuration", () => {
 // H. EVENTS (PRINT)
 // ============================================================
 describe("Events", () => {
-  it("should emit grade-minted event", () => {
-    const { events } = mintGrade(deployer, wallet1, GRADE_BRONZE);
+  it("should emit grade-minted event with ipfs-cid", () => {
+    const { events } = mintGrade(deployer, wallet1, GRADE_BRONZE, CID_BRONZE);
     const printEvents = events.filter((e: any) => e.event === "print_event");
     expect(printEvents.length).toBeGreaterThan(0);
     const data = printEvents[0].data.value;
@@ -519,11 +524,12 @@ describe("Events", () => {
       "token-id": Cl.uint(1),
       recipient: Cl.principal(wallet1),
       grade: Cl.uint(GRADE_BRONZE),
+      "ipfs-cid": Cl.stringAscii(CID_BRONZE),
     });
   });
 
-  it("should emit verified-minted event", () => {
-    const { events } = mintVerified(deployer, wallet1);
+  it("should emit verified-minted event with ipfs-cid", () => {
+    const { events } = mintVerified(deployer, wallet1, CID_VERIFIED);
     const printEvents = events.filter((e: any) => e.event === "print_event");
     expect(printEvents.length).toBeGreaterThan(0);
     const data = printEvents[0].data.value;
@@ -531,6 +537,106 @@ describe("Events", () => {
       event: Cl.stringAscii("verified-minted"),
       "token-id": Cl.uint(1),
       recipient: Cl.principal(wallet1),
+      "ipfs-cid": Cl.stringAscii(CID_VERIFIED),
     });
+  });
+});
+
+// ============================================================
+// I. IPFS INTEGRATION
+// ============================================================
+describe("IPFS Integration", () => {
+  it("get-token-uri returns ipfs:// URI after mint", () => {
+    mintGrade(deployer, wallet1, GRADE_BRONZE, CID_BRONZE);
+    const { result } = readOnly("get-token-uri", [Cl.uint(1)]);
+    expect(result).toBeOk(Cl.some(Cl.stringAscii("ipfs://" + CID_BRONZE)));
+  });
+
+  it("get-token-uri returns none for non-existent token", () => {
+    const { result } = readOnly("get-token-uri", [Cl.uint(999)]);
+    expect(result).toBeOk(Cl.none());
+  });
+
+  it("get-verified-uri returns ipfs:// URI after mint", () => {
+    mintVerified(deployer, wallet1, CID_VERIFIED);
+    const { result } = readOnly("get-verified-uri", [Cl.uint(1)]);
+    expect(result).toBeOk(Cl.some(Cl.stringAscii("ipfs://" + CID_VERIFIED)));
+  });
+
+  it("get-verified-uri returns none for non-existent token", () => {
+    const { result } = readOnly("get-verified-uri", [Cl.uint(999)]);
+    expect(result).toBeOk(Cl.none());
+  });
+
+  it("upgrade updates the IPFS CID on new token", () => {
+    mintGrade(deployer, wallet1, GRADE_BRONZE, CID_BRONZE);
+    upgradeGrade(deployer, wallet1, GRADE_GOLD, CID_GOLD);
+    // New token (id 2) has gold CID
+    const { result: newUri } = readOnly("get-token-uri", [Cl.uint(2)]);
+    expect(newUri).toBeOk(Cl.some(Cl.stringAscii("ipfs://" + CID_GOLD)));
+    // Old token (id 1) is burned, returns none
+    const { result: oldUri } = readOnly("get-token-uri", [Cl.uint(1)]);
+    expect(oldUri).toBeOk(Cl.none());
+  });
+
+  it("admin-update-badge-cid updates an existing badge CID", () => {
+    mintGrade(deployer, wallet1, GRADE_BRONZE, CID_BRONZE);
+    const { result } = simnet.callPublicFn(
+      CONTRACT,
+      "admin-update-badge-cid",
+      [Cl.uint(1), Cl.stringAscii(CID_UPDATED)],
+      deployer
+    );
+    expect(result).toBeOk(Cl.bool(true));
+    const { result: uri } = readOnly("get-token-uri", [Cl.uint(1)]);
+    expect(uri).toBeOk(Cl.some(Cl.stringAscii("ipfs://" + CID_UPDATED)));
+  });
+
+  it("admin-update-badge-cid rejects non-existent token", () => {
+    const { result } = simnet.callPublicFn(
+      CONTRACT,
+      "admin-update-badge-cid",
+      [Cl.uint(999), Cl.stringAscii(CID_UPDATED)],
+      deployer
+    );
+    expect(result).toBeErr(Cl.uint(ERR_NO_GRADE));
+  });
+
+  it("admin-update-badge-cid rejects non-admin", () => {
+    mintGrade(deployer, wallet1, GRADE_BRONZE, CID_BRONZE);
+    const { result } = simnet.callPublicFn(
+      CONTRACT,
+      "admin-update-badge-cid",
+      [Cl.uint(1), Cl.stringAscii(CID_UPDATED)],
+      wallet1
+    );
+    expect(result).toBeErr(Cl.uint(ERR_NOT_ADMIN));
+  });
+
+  it("rejects empty IPFS CID on mint", () => {
+    const { result } = mintGrade(deployer, wallet1, GRADE_BRONZE, "");
+    expect(result).toBeErr(Cl.uint(ERR_INVALID_GRADE));
+  });
+
+  it("revoke clears token URI", () => {
+    mintGrade(deployer, wallet1, GRADE_BRONZE, CID_BRONZE);
+    revokeGrade(deployer, wallet1);
+    const { result } = readOnly("get-token-uri", [Cl.uint(1)]);
+    expect(result).toBeOk(Cl.none());
+  });
+
+  it("revoke verified clears verified URI", () => {
+    mintVerified(deployer, wallet1, CID_VERIFIED);
+    revokeVerified(deployer, wallet1);
+    const { result } = readOnly("get-verified-uri", [Cl.uint(1)]);
+    expect(result).toBeOk(Cl.none());
+  });
+
+  it("get-badge-info includes ipfs-cid field", () => {
+    mintGrade(deployer, wallet1, GRADE_SILVER, CID_SILVER);
+    const { result } = readOnly("get-badge-info", [Cl.uint(1)]);
+    expect(result.type).toBe(ClarityType.OptionalSome);
+    const inner = (result as any).value.value;
+    expect(inner["ipfs-cid"]).toBeAscii(CID_SILVER);
   });
 });

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Cl, ClarityType } from "@stacks/transactions";
 
-const CONTRACT = "escrow-multi-token-v4";
+const CONTRACT = "escrow-contract-v1";
 
 // Accounts are populated by clarinet-sdk setup
 const accounts = simnet.getAccounts();

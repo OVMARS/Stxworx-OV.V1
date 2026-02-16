@@ -1,0 +1,8 @@
+{
+  "name": "STXWorx Verified",
+  "description": "Identity-verified user on the STXWorx freelance platform",
+  "image": "ipfs://Ybafkreif5k2puqzgswwq2xyq3i33x5k7x4txa2zuwzzb5rv2jginpsr7gme",
+  "attributes": [
+    { "trait_type": "Status", "value": "Verified" }
+  ]
+}

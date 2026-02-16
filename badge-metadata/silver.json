@@ -1,0 +1,9 @@
+{
+  "name": "STXWorx Silver Badge",
+  "description": "Silver tier badge awarded on the STXWorx freelance platform",
+  "image": "ipfs://bafkreiab62y3qhjw4f4lxgrmzeu4dwnvinucclk5pxgfai7zux5be64qqu",
+  "attributes": [
+    { "trait_type": "Grade", "value": "Silver" },
+    { "trait_type": "Tier", "value": 2 }
+  ]
+}

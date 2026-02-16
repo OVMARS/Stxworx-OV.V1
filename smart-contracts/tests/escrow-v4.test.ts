@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { Cl } from "@stacks/transactions";
 
 // ── Constants ──────────────────────────────────────────────────────────
-const CONTRACT = "escrow-multi-token-v4";
+const CONTRACT = "escrow-contract-v1";
 const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
 const wallet1 = accounts.get("wallet_1")!; // client

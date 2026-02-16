@@ -1,0 +1,9 @@
+{
+  "name": "STXWorx Gold Badge",
+  "description": "Gold tier badge awarded on the STXWorx freelance platform",
+  "image": "ipfs://bafkreigypd6chgczhuxbyijoqk62i3ejdhvb2n47qx5ppfqoyg3nknx6kq",
+  "attributes": [
+    { "trait_type": "Grade", "value": "Gold" },
+    { "trait_type": "Tier", "value": 3 }
+  ]
+}

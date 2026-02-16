@@ -9,17 +9,17 @@ plan:
     - id: 0
       transactions:
         - contract-publish:
-            contract-name: escrow-testnet-token
-            expected-sender: ST374G41QS4FB1WG73RFS1MM9CCHF8DA73Q54QX7Z
-            cost: 200000
-            path: "contracts\\escrow-multi-token.clar"
+            contract-name: escrow-contract-v1
+            expected-sender: STVNRH0FC9XJP8J18C92J09MNBS2BS2TW6RCAQ87
+            cost: 407450
+            path: contracts/escrow-multi-token.clar
             anchor-block-only: true
-            clarity-version: 2
+            clarity-version: 4
         - contract-publish:
-            contract-name: SBTC-TOKEN-MOCK
-            expected-sender: ST374G41QS4FB1WG73RFS1MM9CCHF8DA73Q54QX7Z
-            cost: 50000
-            path: "contracts\\sbtc-token-mock.clar"
+            contract-name: stxworx-v1
+            expected-sender: STVNRH0FC9XJP8J18C92J09MNBS2BS2TW6RCAQ87
+            cost: 130230
+            path: contracts/stxworx-badge.clar
             anchor-block-only: true
-            clarity-version: 2
-      epoch: "2.5"
+            clarity-version: 4
+      epoch: "3.3"

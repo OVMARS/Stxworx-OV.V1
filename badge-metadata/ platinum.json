@@ -1,0 +1,9 @@
+{
+  "name": "STXWorx Platinum Badge",
+  "description": "Platinum tier badge awarded on the STXWorx freelance platform",
+  "image": "ipfs://Ybafkreibsr2ykk6jcook64ut36la3dsm2bdhah44nr4nvufccq5lvbvjczu",
+  "attributes": [
+    { "trait_type": "Grade", "value": "Platinum" },
+    { "trait_type": "Tier", "value": 4 }
+  ]
+}

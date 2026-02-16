@@ -1,0 +1,9 @@
+{
+  "name": "STXWorx Bronze Badge",
+  "description": "Bronze tier badge awarded on the STXWorx freelance platform",
+  "image": "ipfs://bafkreiexta26pt7otqljcabg63xgeuxwrc47xvvzkyg6apiikorzicocji",
+  "attributes": [
+    { "trait_type": "Grade", "value": "Bronze" },
+    { "trait_type": "Tier", "value": 1 }
+  ]
+}

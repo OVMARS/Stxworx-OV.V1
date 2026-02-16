@@ -9,7 +9,7 @@ plan:
     - id: 0
       transactions:
         - contract-publish:
-            contract-name: escrow-multi-token-v4
+            contract-name: escrow-contract-v1
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             cost: 332050
             path: contracts/escrow-multi-token.clar

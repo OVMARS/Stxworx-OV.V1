@@ -1,6 +1,6 @@
 # Escrow Contract Integration Flow
 
-**Contract:** `STVNRH0FC9XJP8J18C92J09MNBS2BS2TW6RCAQ87.escrow-multi-token-v4`
+**Contract:** `STVNRH0FC9XJP8J18C92J09MNBS2BS2TW6RCAQ87.escrow-contract-v1`
 **Network:** Stacks Testnet
 
 ---
@@ -45,7 +45,7 @@ import {
 } from '@stacks/transactions';
 
 const CONTRACT_ADDRESS = 'STVNRH0FC9XJP8J18C92J09MNBS2BS2TW6RCAQ87';
-const CONTRACT_NAME = 'escrow-multi-token-v4';
+const CONTRACT_NAME = 'escrow-contract-v1';
 const NETWORK = STACKS_TESTNET;
 
 // sBTC trait reference (for sBTC project calls)

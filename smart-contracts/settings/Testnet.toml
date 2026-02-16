@@ -4,10 +4,4 @@ stacks_node_rpc_address = "https://api.testnet.hiro.so"
 deployment_fee_rate = 10
 
 [accounts.deployer]
-mnemonic = "essay expect bomb music bird mixture cruel youth game hunt gasp tumble jealous ski hobby control culture poverty toe again quantum eight lady frame"
-
-[accounts.wallet_1]
-mnemonic = "essay expect bomb music bird mixture cruel youth game hunt gasp tumble jealous ski hobby control culture poverty toe again quantum eight lady frame"
-
-[accounts.wallet_2]
-mnemonic = "essay expect bomb music bird mixture cruel youth game hunt gasp tumble jealous ski hobby control culture poverty toe again quantum eight lady frame"
+mnemonic = ""

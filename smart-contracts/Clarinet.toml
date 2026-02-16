@@ -7,12 +7,12 @@ cache_dir = "./.cache"
 requirements = []
 boot_contracts = []
 
-[contracts.escrow-multi-token-v4]
+[contracts.escrow-contract-v1]
 path = "contracts/escrow-multi-token.clar"
 clarity_version = 4
 epoch = "latest"
 
-[contracts.stxworx-badge-v1]
+[contracts.stxworx-v1]
 path = "contracts/stxworx-badge.clar"
 clarity_version = 4
 epoch = "latest"
