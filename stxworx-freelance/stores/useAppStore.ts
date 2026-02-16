@@ -3,7 +3,6 @@ import { Project, Gig, FreelancerProfile, WalletState, ChatContact, UserRole, Ap
 import {
   fetchGigs,
   fetchLeaderboard,
-  fetchFreelancerByAddress,
   createGigService,
   connectX,
   generateId,
@@ -11,6 +10,7 @@ import {
 import {
   api,
   mapBackendProject,
+  mapBackendUserToProfile,
   type BackendProject,
   type BackendUser,
   type BackendMilestoneSubmission,
@@ -354,9 +354,32 @@ export const useAppStore = create<AppState>((set, get) => ({
         }
       }
 
-      fetchFreelancerByAddress(userAddress, 'You').then((profile) => {
-        set({ currentUserProfile: profile });
-      });
+      // Fetch user profile from backend
+      api.users.getByAddress(userAddress)
+        .then((backendUser) => {
+          set({ currentUserProfile: mapBackendUserToProfile(backendUser) });
+        })
+        .catch(() => {
+          // User not in DB yet (pre-auth) — create a shell profile
+          set({
+            currentUserProfile: {
+              rank: 0,
+              name: userAddress.slice(0, 8),
+              address: userAddress,
+              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userAddress}`,
+              totalEarnings: 0,
+              jobsCompleted: 0,
+              rating: 0,
+              specialty: 'Generalist',
+              badges: [],
+              about: '',
+              portfolio: [],
+              isIdVerified: false,
+              isSkillVerified: false,
+              isPortfolioVerified: false,
+            },
+          });
+        });
 
       const networkUrl = 'https://api.testnet.hiro.so';
       fetch(`${networkUrl}/extended/v1/address/${userAddress}/balances`)
@@ -714,9 +737,32 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   viewProfileByAddress: async (address, name) => {
-    const profile = await fetchFreelancerByAddress(address, name);
-    set({ selectedProfile: profile });
-    return profile;
+    try {
+      const backendUser = await api.users.getByAddress(address);
+      const profile = mapBackendUserToProfile(backendUser);
+      set({ selectedProfile: profile });
+      return profile;
+    } catch {
+      // User not in DB — build a minimal profile from address
+      const fallback: FreelancerProfile = {
+        rank: 0,
+        name: name || address.slice(0, 8),
+        address,
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${address}`,
+        totalEarnings: 0,
+        jobsCompleted: 0,
+        rating: 0,
+        specialty: 'Generalist',
+        badges: [],
+        about: '',
+        portfolio: [],
+        isIdVerified: false,
+        isSkillVerified: false,
+        isPortfolioVerified: false,
+      };
+      set({ selectedProfile: fallback });
+      return fallback;
+    }
   },
 
   openHireModal: (gig) => {

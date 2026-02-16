@@ -22,7 +22,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
-import type { Project, Milestone } from '../types';
+import type { Project, Milestone, FreelancerProfile } from '../types';
 
 /* ═══════════════════════════════════════════════════════
    BACKEND TYPES — mirrors shared/schema.ts row shapes
@@ -188,6 +188,26 @@ export function mapBackendProject(bp: BackendProject): Project {
     createdAt: bp.createdAt,
     milestones,
     status: bp.status,
+  };
+}
+
+/** Convert a BackendUser row → frontend FreelancerProfile shape */
+export function mapBackendUserToProfile(u: BackendUser): FreelancerProfile {
+  return {
+    rank: 0,
+    name: u.username || u.stxAddress.slice(0, 8),
+    address: u.stxAddress,
+    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.stxAddress}`,
+    totalEarnings: 0,
+    jobsCompleted: 0,
+    rating: 0,
+    specialty: 'Generalist',
+    badges: [],
+    about: '',
+    portfolio: [],
+    isIdVerified: false,
+    isSkillVerified: false,
+    isPortfolioVerified: false,
   };
 }
 
