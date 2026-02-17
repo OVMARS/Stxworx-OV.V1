@@ -8,3 +8,4 @@ notificationRoutes.get("/", requireAuth, notificationController.list);
 notificationRoutes.get("/unread-count", requireAuth, notificationController.unreadCount);
 notificationRoutes.patch("/:id/read", requireAuth, notificationController.markRead);
 notificationRoutes.patch("/read-all", requireAuth, notificationController.markAllRead);
+notificationRoutes.delete("/", requireAuth, notificationController.clearAll);

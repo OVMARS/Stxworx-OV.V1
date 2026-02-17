@@ -35,6 +35,7 @@ interface AppState {
   projects: Project[];
   myPostedProjects: Project[];
   myActiveProjects: Project[];
+  myCompletedProjects: Project[];
   leaderboardData: FreelancerProfile[];
   currentUserProfile: FreelancerProfile | null;
   selectedProfile: FreelancerProfile | null;
@@ -125,6 +126,7 @@ interface AppState {
   fetchUnreadCount: () => Promise<void>;
   markNotificationRead: (id: number) => Promise<void>;
   markAllNotificationsRead: () => Promise<void>;
+  clearNotifications: () => Promise<void>;
 
   // Admin actions
   adminLogin: (username: string, password: string) => Promise<void>;
@@ -148,6 +150,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   projects: [],
   myPostedProjects: [],
   myActiveProjects: [],
+  myCompletedProjects: [],
   leaderboardData: [],
   currentUserProfile: null,
   selectedProfile: null,
@@ -215,13 +218,15 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   fetchMyProjects: async () => {
     try {
-      const [posted, active] = await Promise.all([
+      const [posted, active, completed] = await Promise.all([
         api.projects.myPosted().catch(() => []),
         api.projects.myActive().catch(() => []),
+        api.projects.myCompleted().catch(() => []),
       ]);
       set({
         myPostedProjects: posted.map(mapBackendProject),
         myActiveProjects: active.map(mapBackendProject),
+        myCompletedProjects: completed.map(mapBackendProject),
       });
     } catch (e) {
       console.error('Failed to fetch my projects:', e);
@@ -835,6 +840,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       await api.notifications.markAllRead();
     } catch (e) {
       console.error('Failed to mark all read:', e);
+    }
+  },
+
+  clearNotifications: async () => {
+    set({ notifications: [], unreadNotificationCount: 0 });
+    try {
+      await api.notifications.clearAll();
+    } catch (e) {
+      console.error('Failed to clear notifications:', e);
     }
   },
 

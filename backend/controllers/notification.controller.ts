@@ -49,4 +49,15 @@ export const notificationController = {
       return res.status(500).json({ message: "Internal server error" });
     }
   },
+
+  // DELETE /api/notifications
+  async clearAll(req: Request, res: Response) {
+    try {
+      await notificationService.deleteAllForUser(req.user!.id);
+      return res.json({ message: "All notifications cleared" });
+    } catch (error) {
+      console.error("Clear notifications error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
 };

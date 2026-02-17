@@ -1,10 +1,11 @@
 import { type Request, type Response } from "express";
 import { z } from "zod";
 import { db } from "../db";
-import { milestoneSubmissions } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { milestoneSubmissions, users } from "@shared/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { projectService } from "../services/project.service";
 import { notificationService } from "../services/notification.service";
+import type { Project } from "@shared/schema";
 
 const submitSchema = z.object({
   projectId: z.number().int(),
@@ -17,6 +18,17 @@ const submitSchema = z.object({
 const approveSchema = z.object({
   releaseTxId: z.string().min(1).max(100),
 });
+
+/** Get the token amount for a specific milestone number */
+function getMilestoneAmount(project: Project, milestoneNum: number): number {
+  switch (milestoneNum) {
+    case 1: return Number(project.milestone1Amount) || 0;
+    case 2: return Number(project.milestone2Amount) || 0;
+    case 3: return Number(project.milestone3Amount) || 0;
+    case 4: return Number(project.milestone4Amount) || 0;
+    default: return 0;
+  }
+}
 
 export const milestoneController = {
   // POST /api/milestones/submit
@@ -114,6 +126,38 @@ export const milestoneController = {
       const approvedCount = allSubmissions.filter((s) => s.status === "approved").length;
       if (approvedCount >= project.numMilestones) {
         await projectService.update(project.id, { status: "completed" });
+      }
+
+      // Update freelancer earnings
+      if (submission.freelancerId) {
+        const milestoneAmount = getMilestoneAmount(project, submission.milestoneNum);
+        if (milestoneAmount > 0) {
+          await db
+            .update(users)
+            .set({
+              totalEarned: sql`${users.totalEarned} + ${String(milestoneAmount)}`,
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, submission.freelancerId));
+        }
+      }
+
+      // Update freelancer earnings — add this milestone's amount
+      if (submission.freelancerId) {
+        try {
+          const milestoneAmount = getMilestoneAmount(project, submission.milestoneNum);
+          if (milestoneAmount > 0) {
+            await db
+              .update(users)
+              .set({
+                totalEarned: sql`${users.totalEarned} + ${String(milestoneAmount)}`,
+                updatedAt: new Date(),
+              })
+              .where(eq(users.id, submission.freelancerId));
+          }
+        } catch (e) {
+          console.error("Failed to update freelancer earnings:", e);
+        }
       }
 
       // Notify the freelancer that their milestone was approved

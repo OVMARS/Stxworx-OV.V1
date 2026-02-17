@@ -94,6 +94,21 @@ export const projectService = {
       );
   },
 
+  async getCompletedForUser(userId: number) {
+    return db
+      .select()
+      .from(projects)
+      .where(
+        and(
+          eq(projects.status, "completed"),
+          or(
+            eq(projects.clientId, userId),
+            eq(projects.freelancerId, userId)
+          )
+        )
+      );
+  },
+
   async update(id: number, data: Partial<Project>) {
     await db
       .update(projects)

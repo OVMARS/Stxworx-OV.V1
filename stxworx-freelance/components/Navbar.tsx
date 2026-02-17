@@ -27,6 +27,7 @@ const Navbar: React.FC<NavbarProps> = ({ wallet, userRole, onConnect, onDisconne
     fetchUnreadCount,
     markNotificationRead,
     markAllNotificationsRead,
+    clearNotifications,
   } = useAppStore();
 
   // Close dropdown when clicking outside
@@ -72,14 +73,24 @@ const Navbar: React.FC<NavbarProps> = ({ wallet, userRole, onConnect, onDisconne
     <div className="absolute right-0 top-full mt-2 w-80 md:w-96 bg-[#0b0f19] border border-slate-800 rounded-xl shadow-2xl shadow-black/40 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
         <h3 className="text-sm font-bold text-white uppercase tracking-wider">Notifications</h3>
-        {unreadNotificationCount > 0 && (
-          <button
-            onClick={() => markAllNotificationsRead()}
-            className="text-[10px] font-bold text-orange-500 hover:text-orange-400 uppercase tracking-wider transition-colors"
-          >
-            Mark all read
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {unreadNotificationCount > 0 && (
+            <button
+              onClick={() => markAllNotificationsRead()}
+              className="text-[10px] font-bold text-orange-500 hover:text-orange-400 uppercase tracking-wider transition-colors"
+            >
+              Mark all read
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <button
+              onClick={() => { clearNotifications(); setIsNotifOpen(false); }}
+              className="text-[10px] font-bold text-red-500 hover:text-red-400 uppercase tracking-wider transition-colors"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="max-h-80 overflow-y-auto custom-scrollbar">

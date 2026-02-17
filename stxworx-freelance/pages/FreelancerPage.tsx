@@ -20,7 +20,7 @@ const PROPOSAL_STATUS_CONFIG: Record<ProposalStatus, { label: string; color: str
 const FreelancerPage: React.FC = () => {
   const navigate = useNavigate();
   const {
-    myActiveProjects, wallet, currentUserProfile, leaderboardData, projects,
+    myActiveProjects, myCompletedProjects, wallet, currentUserProfile, leaderboardData, projects,
     freelancerDashboardTab, setFreelancerDashboardTab, isProcessing,
     handleProjectAction, applications, updateApplicationStatus,
     fetchMyProjects, fetchMyProposals, myProposals, withdrawProposal,
@@ -140,7 +140,7 @@ const FreelancerPage: React.FC = () => {
     { key: 'applied' as const,   label: 'Pending',     icon: <Send className="w-4 h-4" />,         count: pendingProposals.length },
     { key: 'active' as const,    label: 'Accepted',    icon: <CheckCircle2 className="w-4 h-4" />, count: acceptedProposals.length },
     { key: 'work' as const,      label: 'Active Work', icon: <Play className="w-4 h-4" />,         count: myActiveProjects.length },
-    { key: 'completed' as const, label: 'Rejected',    icon: <XCircle className="w-4 h-4" />,      count: rejectedProposals.length },
+    { key: 'completed' as const, label: 'Completed',   icon: <CheckCircle2 className="w-4 h-4" />, count: myCompletedProjects.length },
     { key: 'earnings' as const,  label: 'Earnings',    icon: <DollarSign className="w-4 h-4" />,   count: null },
     { key: 'nft' as const,       label: 'NFT Badges',  icon: <Award className="w-4 h-4" />,        count: null },
   ];
@@ -266,13 +266,21 @@ const FreelancerPage: React.FC = () => {
 
       {freelancerDashboardTab === 'completed' && (
         <div className="space-y-4">
-          {rejectedProposals.length > 0 ? (
-            rejectedProposals.map((p) => renderProposalCard(p, false))
+          {myCompletedProjects.length > 0 ? (
+            myCompletedProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                role="freelancer"
+                onAction={handleProjectAction}
+                isProcessing={isProcessing}
+              />
+            ))
           ) : (
             <EmptyState
-              icon={XCircle}
-              title="No Rejected or Withdrawn Proposals"
-              subtitle="Rejected and withdrawn proposals will appear here for your records."
+              icon={CheckCircle2}
+              title="No Completed Projects"
+              subtitle="Projects will appear here once all milestones are approved and funds released."
             />
           )}
         </div>
@@ -286,12 +294,21 @@ const FreelancerPage: React.FC = () => {
                 <TrendingUp className="w-6 h-6 text-orange-500" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Active Projects</h3>
-                <div className="text-3xl font-black text-white">{myActiveProjects.length}</div>
+                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total Earnings</h3>
+                <div className="text-3xl font-black text-white">
+                  {currentUserProfile ? formatUSD(tokenToUsd(currentUserProfile.totalEarnings, 'STX')) : '$0.00'}
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {currentUserProfile ? `${currentUserProfile.totalEarnings.toLocaleString()} tokens earned` : '0 tokens earned'}
+                </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Completed Projects</div>
+                <div className="text-xl font-black text-green-400">{myCompletedProjects.length}</div>
+              </div>
               <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Active Projects</div>
                 <div className="text-xl font-black text-orange-400">{myActiveProjects.length}</div>
@@ -308,6 +325,33 @@ const FreelancerPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Completed project earnings breakdown */}
+          {myCompletedProjects.length > 0 && (
+            <div className="bg-[#0b0f19] rounded-2xl border border-slate-800 p-6">
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Completed Project History</h3>
+              <div className="space-y-3">
+                {myCompletedProjects.map((project) => (
+                  <div key={project.id} className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                    <div>
+                      <div className="text-sm font-bold text-white">{project.title}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        {project.milestones.length} milestones · {project.tokenType}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-black text-green-400">
+                        {formatUSD(tokenToUsd(project.totalBudget, project.tokenType))}
+                      </div>
+                      <div className="text-[10px] text-slate-600 font-mono">
+                        {project.totalBudget.toLocaleString()} {project.tokenType}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

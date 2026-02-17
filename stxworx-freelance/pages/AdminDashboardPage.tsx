@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminPanel from '../components/AdminPanel';
+import AdminWalletGate from '../components/admin/AdminWalletGate';
 import { useAppStore } from '../stores/useAppStore';
 
 const AdminDashboardPage: React.FC = () => {
@@ -30,7 +31,12 @@ const AdminDashboardPage: React.FC = () => {
 
   if (!isAdminAuthenticated) return null;
 
-  return <AdminPanel onLogout={handleLogout} />;
+  // Two-factor: auth verified → now require wallet connection
+  return (
+    <AdminWalletGate>
+      <AdminPanel onLogout={handleLogout} />
+    </AdminWalletGate>
+  );
 };
 
 export default AdminDashboardPage;

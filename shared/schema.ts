@@ -58,6 +58,7 @@ export const users = mysqlTable("users", {
   username: varchar("username", { length: 100 }),
   role: mysqlEnum("role", [...USER_ROLES]).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
+  totalEarned: decimal("total_earned", { precision: 18, scale: 8 }).default("0").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

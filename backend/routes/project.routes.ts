@@ -7,6 +7,8 @@ export const projectRoutes = Router();
 // Protected — must come before /:id routes
 projectRoutes.get("/my/posted", requireAuth, projectController.myPosted);
 projectRoutes.get("/my/active", requireAuth, projectController.myActive);
+projectRoutes.get("/my/completed", requireAuth, projectController.myCompleted);
+projectRoutes.get("/my/completed", requireAuth, projectController.myCompleted);
 
 // Public
 projectRoutes.get("/", projectController.getAll);

@@ -1,22 +1,25 @@
 
 import React, { useState, useEffect } from 'react';
-import { Hexagon, LayoutDashboard, Users, Briefcase, AlertTriangle, Database, LogOut, Search, Bell, Shield } from 'lucide-react';
+import { Hexagon, LayoutDashboard, Users, Briefcase, AlertTriangle, Database, LogOut, Search, Bell, Shield, Wallet, Crown } from 'lucide-react';
 import AdminUsers from './admin/AdminUsers';
 import AdminJobs from './admin/AdminJobs';
 import AdminDisputes from './admin/AdminDisputes';
 import AdminNFT from './admin/AdminNFT';
 import AdminEscrow from './admin/AdminEscrow';
+import AdminOwnership from './admin/AdminOwnership';
 import { useAppStore } from '../stores/useAppStore';
+import { useWallet } from './wallet/WalletProvider';
 
 interface AdminPanelProps {
   onLogout: () => void;
 }
 
-type AdminTab = 'overview' | 'users' | 'jobs' | 'disputes' | 'escrow' | 'nft';
+type AdminTab = 'overview' | 'users' | 'jobs' | 'disputes' | 'escrow' | 'nft' | 'ownership';
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const { adminDashboardStats, fetchDashboardStats, adminUser } = useAppStore();
+  const { userAddress, disconnect } = useWallet();
 
   useEffect(() => {
     fetchDashboardStats();
@@ -44,6 +47,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
       case 'disputes': return <AdminDisputes />;
       case 'escrow': return <AdminEscrow />;
       case 'nft': return <AdminNFT />;
+      case 'ownership': return <AdminOwnership />;
       case 'overview':
       default:
         const s = adminDashboardStats;
@@ -176,6 +180,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
            <NavItem tab="disputes" icon={AlertTriangle} label="Disputes" />
            <NavItem tab="escrow" icon={Shield} label="Escrow Mgmt" />
            <NavItem tab="nft" icon={Database} label="NFT Release" />
+           
+           <div className="text-xs font-bold text-slate-600 uppercase tracking-wider px-4 mb-2 mt-6">Contract</div>
+           <NavItem tab="ownership" icon={Crown} label="Ownership" />
         </nav>
 
         <div className="p-4 border-t border-slate-800">
@@ -194,7 +201,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
          {/* Top Header */}
          <header className="h-20 bg-[#020617]/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-8 sticky top-0 z-10">
             <h1 className="text-xl font-bold text-white uppercase tracking-tight">
-               {activeTab === 'nft' ? 'NFT Release' : activeTab === 'disputes' ? 'Dispute Management' : activeTab === 'escrow' ? 'Escrow Management' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+               {activeTab === 'nft' ? 'NFT Release' : activeTab === 'disputes' ? 'Dispute Management' : activeTab === 'escrow' ? 'Escrow Management' : activeTab === 'ownership' ? 'Contract Ownership' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
             </h1>
             
             <div className="flex items-center gap-6">
@@ -210,6 +217,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                   <Bell className="w-5 h-5" />
                   <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
                </button>
+               {/* Admin Wallet Indicator */}
+               {userAddress && (
+                 <div className="flex items-center gap-2 bg-[#0b0f19] border border-slate-800 rounded-full px-3 py-1.5">
+                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                   <Wallet className="w-3.5 h-3.5 text-orange-500" />
+                   <span className="text-xs font-mono text-slate-400">
+                     {userAddress.slice(0, 6)}...{userAddress.slice(-4)}
+                   </span>
+                   <button
+                     onClick={disconnect}
+                     className="text-[10px] font-bold text-slate-500 hover:text-red-400 uppercase tracking-wider transition-colors ml-1"
+                   >
+                     ✕
+                   </button>
+                 </div>
+               )}
                <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold text-xs border-2 border-slate-900">
                   {(adminUser?.username || 'AD').slice(0, 2).toUpperCase()}
                </div>

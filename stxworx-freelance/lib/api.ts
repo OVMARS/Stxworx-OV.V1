@@ -34,6 +34,7 @@ export interface BackendUser {
   username: string | null;
   role: 'client' | 'freelancer';
   isActive?: boolean;
+  totalEarned?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -235,7 +236,7 @@ export function mapBackendUserToProfile(u: BackendUser): FreelancerProfile {
     name: u.username || u.stxAddress.slice(0, 8),
     address: u.stxAddress,
     avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.stxAddress}`,
-    totalEarnings: 0,
+    totalEarnings: parseFloat(u.totalEarned || '0'),
     jobsCompleted: 0,
     rating: 0,
     specialty: 'Generalist',
@@ -328,6 +329,8 @@ export const api = {
     myPosted: () => request<BackendProject[]>('/projects/my/posted'),
 
     myActive: () => request<BackendProject[]>('/projects/my/active'),
+
+    myCompleted: () => request<BackendProject[]>('/projects/my/completed'),
 
     activate: (id: number | string, escrowTxId: string, onChainId: number) =>
       request<BackendProject>(`/projects/${id}/activate`, {
@@ -431,6 +434,9 @@ export const api = {
 
     markAllRead: () =>
       request<{ message: string }>('/notifications/read-all', { method: 'PATCH' }),
+
+    clearAll: () =>
+      request<{ message: string }>('/notifications', { method: 'DELETE' }),
   },
 
   /* ── Admin ── */

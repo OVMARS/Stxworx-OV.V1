@@ -138,6 +138,36 @@ export const projectController = {
     }
   },
 
+  // GET /api/projects/my/completed
+  async myCompleted(req: Request, res: Response) {
+    try {
+      const projects = await projectService.getCompletedForUser(req.user!.id);
+      const withBudget = projects.map((p) => ({
+        ...p,
+        budget: projectService.computeBudget(p),
+      }));
+      return res.status(200).json(withBudget);
+    } catch (error) {
+      console.error("My completed projects error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  // GET /api/projects/my/completed
+  async myCompleted(req: Request, res: Response) {
+    try {
+      const projects = await projectService.getCompletedForUser(req.user!.id);
+      const withBudget = projects.map((p) => ({
+        ...p,
+        budget: projectService.computeBudget(p),
+      }));
+      return res.status(200).json(withBudget);
+    } catch (error) {
+      console.error("My completed projects error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
   // PATCH /api/projects/:id/activate
   async activate(req: Request, res: Response) {
     try {

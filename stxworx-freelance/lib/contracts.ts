@@ -4,10 +4,12 @@ import {
     uintCV,
     standardPrincipalCV,
     contractPrincipalCV,
+    boolCV,
     PostConditionMode,
     StandardPrincipalCV,
     UIntCV,
     ContractPrincipalCV,
+    BooleanCV,
     fetchCallReadOnlyFunction,
     cvToValue,
 } from '@stacks/transactions';
@@ -205,6 +207,171 @@ export const emergencyRefundContractCall = async (
         functionName,
         functionArgs,
         postConditionMode: PostConditionMode.Allow,
+        onFinish,
+        onCancel,
+        appDetails: { name: APP_CONFIG.name, icon: window.location.origin + APP_CONFIG.icon },
+    });
+};
+
+/* ══════════════════════════════════════════════════════════════
+   ADMIN CONTRACT CALLS — require admin wallet to be connected
+   ══════════════════════════════════════════════════════════════ */
+
+/**
+ * Admin Resolve Dispute — releases disputed milestone funds
+ * to either the freelancer or client based on admin decision.
+ * Contract: admin-resolve-dispute-stx / admin-resolve-dispute-sbtc
+ * Params: (project-id uint, milestone-num uint, release-to-freelancer bool [, sbtc-token trait])
+ */
+export const adminResolveDisputeContractCall = async (
+    projectId: number,
+    milestoneNum: number,
+    releaseToFreelancer: boolean,
+    tokenType: 'STX' | 'sBTC',
+    onFinish: (data: any) => void,
+    onCancel: () => void
+) => {
+    const functionName = tokenType === 'STX'
+        ? 'admin-resolve-dispute-stx'
+        : 'admin-resolve-dispute-sbtc';
+
+    const functionArgs: (UIntCV | BooleanCV | ContractPrincipalCV)[] = [
+        uintCV(projectId),
+        uintCV(milestoneNum),
+        boolCV(releaseToFreelancer),
+    ];
+
+    if (tokenType === 'sBTC') {
+        functionArgs.push(contractPrincipalCV(SBTC_CONTRACT_ADDRESS, SBTC_CONTRACT_NAME));
+    }
+
+    await openContractCall({
+        network: STACKS_TESTNET,
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: CONTRACT_NAME,
+        functionName,
+        functionArgs,
+        postConditionMode: PostConditionMode.Allow,
+        onFinish,
+        onCancel,
+        appDetails: { name: APP_CONFIG.name, icon: window.location.origin + APP_CONFIG.icon },
+    });
+};
+
+/**
+ * Admin Force Refund — refunds ALL remaining unreleased milestone funds
+ * back to the client. Used for abandoned projects.
+ * Contract: admin-force-refund-stx / admin-force-refund-sbtc
+ * Params: (project-id uint [, sbtc-token trait])
+ */
+export const adminForceRefundContractCall = async (
+    projectId: number,
+    tokenType: 'STX' | 'sBTC',
+    onFinish: (data: any) => void,
+    onCancel: () => void
+) => {
+    const functionName = tokenType === 'STX'
+        ? 'admin-force-refund-stx'
+        : 'admin-force-refund-sbtc';
+
+    const functionArgs: (UIntCV | ContractPrincipalCV)[] = [uintCV(projectId)];
+    if (tokenType === 'sBTC') {
+        functionArgs.push(contractPrincipalCV(SBTC_CONTRACT_ADDRESS, SBTC_CONTRACT_NAME));
+    }
+
+    await openContractCall({
+        network: STACKS_TESTNET,
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: CONTRACT_NAME,
+        functionName,
+        functionArgs,
+        postConditionMode: PostConditionMode.Allow,
+        onFinish,
+        onCancel,
+        appDetails: { name: APP_CONFIG.name, icon: window.location.origin + APP_CONFIG.icon },
+    });
+};
+
+/* ══════════════════════════════════════════════════════════════
+   CONTRACT OWNERSHIP — Propose / Accept transfer + read-only
+   ══════════════════════════════════════════════════════════════ */
+
+/** Read-only: get the current contract owner principal */
+export const getContractOwner = async (): Promise<string | null> => {
+    try {
+        const result = await fetchCallReadOnlyFunction({
+            contractAddress: CONTRACT_ADDRESS,
+            contractName: CONTRACT_NAME,
+            functionName: 'get-contract-owner',
+            functionArgs: [],
+            senderAddress: CONTRACT_ADDRESS,
+            network: STACKS_TESTNET,
+        });
+        const value = cvToValue(result);
+        return typeof value === 'string' ? value : value?.value ?? null;
+    } catch (e) {
+        console.error('Failed to read contract owner:', e);
+        return null;
+    }
+};
+
+/** Read-only: get the currently proposed new owner (or null if none) */
+export const getProposedOwner = async (): Promise<string | null> => {
+    try {
+        const result = await fetchCallReadOnlyFunction({
+            contractAddress: CONTRACT_ADDRESS,
+            contractName: CONTRACT_NAME,
+            functionName: 'get-proposed-owner',
+            functionArgs: [],
+            senderAddress: CONTRACT_ADDRESS,
+            network: STACKS_TESTNET,
+        });
+        const value = cvToValue(result);
+        if (!value || value === 'none') return null;
+        return typeof value === 'string' ? value : value?.value ?? null;
+    } catch (e) {
+        console.error('Failed to read proposed owner:', e);
+        return null;
+    }
+};
+
+/**
+ * Propose ownership transfer — only callable by current contract-owner
+ * Contract: propose-ownership(new-owner principal)
+ */
+export const proposeOwnershipContractCall = async (
+    newOwner: string,
+    onFinish: (data: any) => void,
+    onCancel: () => void
+) => {
+    await openContractCall({
+        network: STACKS_TESTNET,
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: CONTRACT_NAME,
+        functionName: 'propose-ownership',
+        functionArgs: [standardPrincipalCV(newOwner)],
+        postConditionMode: PostConditionMode.Deny,
+        onFinish,
+        onCancel,
+        appDetails: { name: APP_CONFIG.name, icon: window.location.origin + APP_CONFIG.icon },
+    });
+};
+
+/**
+ * Accept ownership — only callable by the proposed-owner principal
+ * Contract: accept-ownership()
+ */
+export const acceptOwnershipContractCall = async (
+    onFinish: (data: any) => void,
+    onCancel: () => void
+) => {
+    await openContractCall({
+        network: STACKS_TESTNET,
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: CONTRACT_NAME,
+        functionName: 'accept-ownership',
+        functionArgs: [],
+        postConditionMode: PostConditionMode.Deny,
         onFinish,
         onCancel,
         appDetails: { name: APP_CONFIG.name, icon: window.location.origin + APP_CONFIG.icon },

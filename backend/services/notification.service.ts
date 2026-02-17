@@ -54,4 +54,10 @@ export const notificationService = {
       .set({ isRead: true })
       .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
   },
+
+  async deleteAllForUser(userId: number) {
+    await db
+      .delete(notifications)
+      .where(eq(notifications.userId, userId));
+  },
 };
