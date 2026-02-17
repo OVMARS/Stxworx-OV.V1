@@ -12,6 +12,7 @@ const AdminDisputes: React.FC = () => {
    const [modalMode, setModalMode] = useState<ModalMode>(null);
    const [resolution, setResolution] = useState('');
    const [resolutionTxId, setResolutionTxId] = useState('');
+   const [favorFreelancer, setFavorFreelancer] = useState(true);
    const [processing, setProcessing] = useState(false);
    const [refreshing, setRefreshing] = useState(false);
 
@@ -29,6 +30,7 @@ const AdminDisputes: React.FC = () => {
       setModalMode(mode);
       setResolution('');
       setResolutionTxId('');
+      setFavorFreelancer(true);
    };
 
    const closeModal = () => {
@@ -36,6 +38,7 @@ const AdminDisputes: React.FC = () => {
       setModalMode(null);
       setResolution('');
       setResolutionTxId('');
+      setFavorFreelancer(true);
    };
 
    const handleSubmit = async () => {
@@ -43,7 +46,7 @@ const AdminDisputes: React.FC = () => {
       setProcessing(true);
       try {
          if (modalMode === 'resolve') {
-            await adminResolveDispute(selectedDispute.id, resolution, resolutionTxId);
+            await adminResolveDispute(selectedDispute.id, resolution, resolutionTxId, favorFreelancer);
          } else {
             await adminResetDispute(selectedDispute.id, resolution, resolutionTxId);
          }
@@ -313,6 +316,45 @@ const AdminDisputes: React.FC = () => {
                      {/* Action mode — resolution form */}
                      {modalMode && (
                         <>
+                           {/* Favor Freelancer toggle — only for resolve */}
+                           {modalMode === 'resolve' && (
+                              <div>
+                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                                    <Shield className="w-3 h-3 inline mr-1" />
+                                    Funds Decision *
+                                 </label>
+                                 <div className="flex gap-3">
+                                    <button
+                                       type="button"
+                                       onClick={() => setFavorFreelancer(true)}
+                                       className={`flex-1 px-4 py-3 rounded-lg border text-sm font-bold transition-all ${
+                                          favorFreelancer
+                                             ? 'bg-green-600/20 border-green-500 text-green-400'
+                                             : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700'
+                                       }`}
+                                    >
+                                       <div className="text-center">
+                                          <div>Release to Freelancer</div>
+                                          <div className="text-[10px] mt-1 opacity-70">Milestone funds sent to freelancer</div>
+                                       </div>
+                                    </button>
+                                    <button
+                                       type="button"
+                                       onClick={() => setFavorFreelancer(false)}
+                                       className={`flex-1 px-4 py-3 rounded-lg border text-sm font-bold transition-all ${
+                                          !favorFreelancer
+                                             ? 'bg-orange-600/20 border-orange-500 text-orange-400'
+                                             : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700'
+                                       }`}
+                                    >
+                                       <div className="text-center">
+                                          <div>Refund to Client</div>
+                                          <div className="text-[10px] mt-1 opacity-70">Milestone funds returned to client</div>
+                                       </div>
+                                    </button>
+                                 </div>
+                              </div>
+                           )}
                            <div>
                               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                                  <FileText className="w-3 h-3 inline mr-1" />

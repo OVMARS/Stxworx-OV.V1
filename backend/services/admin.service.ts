@@ -7,6 +7,7 @@ import {
   milestoneSubmissions,
 } from "@shared/schema";
 import { eq, sql, and, lt, ne, count, sum, inArray } from "drizzle-orm";
+import { notificationService } from "./notification.service";
 
 export const adminService = {
   async getDashboard() {
@@ -139,8 +140,12 @@ export const adminService = {
   async resolveDispute(
     disputeId: number,
     adminId: number,
-    data: { resolution: string; resolutionTxId: string }
+    data: { resolution: string; resolutionTxId: string; favorFreelancer: boolean }
   ) {
+    // Get the dispute first to know the project/milestone
+    const [dispute] = await db.select().from(disputes).where(eq(disputes.id, disputeId));
+    if (!dispute || dispute.status !== 'open') return null;
+
     await db
       .update(disputes)
       .set({
@@ -152,14 +157,52 @@ export const adminService = {
       })
       .where(eq(disputes.id, disputeId));
     const [updated] = await db.select().from(disputes).where(eq(disputes.id, disputeId));
+
+    // If the project was stuck in "disputed" status (legacy), restore it to "active"
+    // Check if there are any remaining open disputes on this project
+    const remainingOpen = await db
+      .select()
+      .from(disputes)
+      .where(and(eq(disputes.projectId, dispute.projectId), eq(disputes.status, 'open')));
+    if (remainingOpen.length === 0) {
+      const [project] = await db.select().from(projects).where(eq(projects.id, dispute.projectId));
+      if (project && project.status === 'disputed') {
+        await db.update(projects).set({ status: 'active' }).where(eq(projects.id, dispute.projectId));
+      }
+    }
+
+    // Notify both parties about the resolution
+    try {
+      const [project] = await db.select().from(projects).where(eq(projects.id, dispute.projectId));
+      if (project) {
+        const outcome = data.favorFreelancer ? 'released to freelancer' : 'refunded to client';
+        const notifyIds = [project.clientId, project.freelancerId].filter(Boolean) as number[];
+        for (const userId of notifyIds) {
+          await notificationService.create({
+            userId,
+            type: 'dispute_resolved',
+            title: `Dispute Resolved — Milestone ${dispute.milestoneNum}`,
+            message: `The dispute on Milestone ${dispute.milestoneNum} of "${project.title}" has been resolved. Funds ${outcome}. Resolution: ${data.resolution.slice(0, 100)}`,
+            projectId: dispute.projectId,
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Failed to send dispute resolution notifications:', e);
+    }
+
     return updated || null;
   },
 
   async resetDispute(
     disputeId: number,
     adminId: number,
-    data: { resolution: string; resolutionTxId: string }
+    data: { resolution: string; resolutionTxId: string; favorFreelancer: boolean }
   ) {
+    // Get the dispute first
+    const [dispute] = await db.select().from(disputes).where(eq(disputes.id, disputeId));
+    if (!dispute || dispute.status !== 'open') return null;
+
     await db
       .update(disputes)
       .set({
@@ -171,6 +214,38 @@ export const adminService = {
       })
       .where(eq(disputes.id, disputeId));
     const [updated] = await db.select().from(disputes).where(eq(disputes.id, disputeId));
+
+    // If the project was stuck in "disputed" status (legacy), restore to "active"
+    const remainingOpen = await db
+      .select()
+      .from(disputes)
+      .where(and(eq(disputes.projectId, dispute.projectId), eq(disputes.status, 'open')));
+    if (remainingOpen.length === 0) {
+      const [project] = await db.select().from(projects).where(eq(projects.id, dispute.projectId));
+      if (project && project.status === 'disputed') {
+        await db.update(projects).set({ status: 'active' }).where(eq(projects.id, dispute.projectId));
+      }
+    }
+
+    // Notify both parties about the reset
+    try {
+      const [project] = await db.select().from(projects).where(eq(projects.id, dispute.projectId));
+      if (project) {
+        const notifyIds = [project.clientId, project.freelancerId].filter(Boolean) as number[];
+        for (const userId of notifyIds) {
+          await notificationService.create({
+            userId,
+            type: 'dispute_resolved',
+            title: `Dispute Reset — Milestone ${dispute.milestoneNum}`,
+            message: `The dispute on Milestone ${dispute.milestoneNum} of "${project.title}" has been reset by admin. The milestone is now open for normal workflow. Note: ${data.resolution.slice(0, 100)}`,
+            projectId: dispute.projectId,
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Failed to send dispute reset notifications:', e);
+    }
+
     return updated || null;
   },
 

@@ -12,6 +12,7 @@ const loginSchema = z.object({
 const resolveDisputeSchema = z.object({
   resolution: z.string().min(1),
   resolutionTxId: z.string().min(1),
+  favorFreelancer: z.boolean(),
 });
 
 const forceReleaseSchema = z.object({

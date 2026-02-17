@@ -82,7 +82,10 @@ export const projectService = {
       .from(projects)
       .where(
         and(
-          eq(projects.status, "active"),
+          or(
+            eq(projects.status, "active"),
+            eq(projects.status, "disputed")  // include legacy disputed — disputes are per-milestone now
+          ),
           or(
             eq(projects.clientId, userId),
             eq(projects.freelancerId, userId)

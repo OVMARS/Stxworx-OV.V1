@@ -98,6 +98,19 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 (async () => {
   const server = createServer(app);
 
+  // One-time cleanup: disputes are per-milestone now, project status should never be "disputed"
+  try {
+    const { db } = await import("./db");
+    const { projects } = await import("../shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const fixed = await db.update(projects).set({ status: "active" }).where(eq(projects.status, "disputed"));
+    if (fixed[0]?.affectedRows) {
+      console.log(`[startup] Restored ${fixed[0].affectedRows} legacy "disputed" projects to "active"`);
+    }
+  } catch (e) {
+    console.error("[startup] Failed to clean up disputed projects:", e);
+  }
+
   // Setup Vite in development for frontend serving
   if (app.get("env") === "development") {
     const { setupVite } = await import("./vite");

@@ -2,14 +2,15 @@ import { type Request, type Response } from "express";
 import { z } from "zod";
 import { db } from "../db";
 import { disputes } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { projectService } from "../services/project.service";
+import { notificationService } from "../services/notification.service";
 
 const createDisputeSchema = z.object({
   projectId: z.number().int(),
   milestoneNum: z.number().int().min(1).max(4),
   reason: z.string().min(1),
-  evidenceUrl: z.string().url().max(500).optional(),
+  evidenceUrl: z.string().max(500).optional(),
   disputeTxId: z.string().max(100).optional(),
 });
 
@@ -34,6 +35,16 @@ export const disputeController = {
         return res.status(400).json({ message: "Can only dispute active projects" });
       }
 
+      // Check if this milestone already has an open dispute
+      const existing = await db
+        .select()
+        .from(disputes)
+        .where(and(eq(disputes.projectId, projectId), eq(disputes.milestoneNum, milestoneNum)));
+      const hasOpen = existing.some(d => d.status === "open");
+      if (hasOpen) {
+        return res.status(400).json({ message: "This milestone already has an open dispute" });
+      }
+
       const insertResult = await db
         .insert(disputes)
         .values({
@@ -46,8 +57,25 @@ export const disputeController = {
         });
       const [dispute] = await db.select().from(disputes).where(eq(disputes.id, insertResult[0].insertId));
 
-      // Mark project as disputed
-      await projectService.update(projectId, { status: "disputed" });
+      // NOTE: Project stays "active" — only this milestone is blocked.
+      // The smart contract handles per-milestone dispute locks.
+
+      // Notify the counterparty
+      try {
+        const counterpartyId = req.user!.id === project.clientId ? project.freelancerId : project.clientId;
+        if (counterpartyId) {
+          const filerRole = req.user!.id === project.clientId ? "Client" : "Freelancer";
+          await notificationService.create({
+            userId: counterpartyId,
+            type: "dispute_filed",
+            title: `Dispute Filed on Milestone ${milestoneNum}`,
+            message: `${filerRole} has filed a dispute on Milestone ${milestoneNum} of "${project.title}". Reason: ${reason.slice(0, 100)}${reason.length > 100 ? '...' : ''}`,
+            projectId,
+          });
+        }
+      } catch (e) {
+        console.error("Failed to create dispute notification:", e);
+      }
 
       return res.status(201).json(dispute);
     } catch (error) {

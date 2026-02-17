@@ -463,16 +463,16 @@ export const api = {
 
     disputes: () => request<BackendDispute[]>('/admin/disputes'),
 
-    resolveDispute: (id: number, resolution: string, resolutionTxId: string) =>
+    resolveDispute: (id: number, resolution: string, resolutionTxId: string, favorFreelancer: boolean) =>
       request<BackendDispute>(`/admin/disputes/${id}/resolve`, {
         method: 'PATCH',
-        body: JSON.stringify({ resolution, resolutionTxId }),
+        body: JSON.stringify({ resolution, resolutionTxId, favorFreelancer }),
       }),
 
     resetDispute: (id: number, resolution: string, resolutionTxId: string) =>
       request<BackendDispute>(`/admin/disputes/${id}/reset`, {
         method: 'PATCH',
-        body: JSON.stringify({ resolution, resolutionTxId }),
+        body: JSON.stringify({ resolution, resolutionTxId, favorFreelancer: false }),
       }),
 
     abandonedProjects: () => request<BackendProject[]>('/admin/recovery/abandoned'),

@@ -135,7 +135,7 @@ interface AppState {
   toggleUserStatus: (userId: number, isActive: boolean) => Promise<void>;
   fetchAdminProjects: (filters?: { status?: string; search?: string }) => Promise<void>;
   fetchAdminDisputes: () => Promise<void>;
-  adminResolveDispute: (id: number, resolution: string, resolutionTxId: string) => Promise<void>;
+  adminResolveDispute: (id: number, resolution: string, resolutionTxId: string, favorFreelancer: boolean) => Promise<void>;
   adminResetDispute: (id: number, resolution: string, resolutionTxId: string) => Promise<void>;
   adminForceRelease: (projectId: number, milestoneNum: number, txId: string) => Promise<void>;
   adminForceRefund: (projectId: number, txId: string) => Promise<void>;
@@ -906,8 +906,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  adminResolveDispute: async (id, resolution, resolutionTxId) => {
-    const updated = await api.admin.resolveDispute(id, resolution, resolutionTxId);
+  adminResolveDispute: async (id, resolution, resolutionTxId, favorFreelancer) => {
+    const updated = await api.admin.resolveDispute(id, resolution, resolutionTxId, favorFreelancer);
     set((s) => ({ adminDisputes: s.adminDisputes.map((d) => (d.id === updated.id ? updated : d)) }));
   },
 
