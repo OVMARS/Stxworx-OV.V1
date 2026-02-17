@@ -627,25 +627,77 @@ export const useAppStore = create<AppState>((set, get) => ({
         await api.projects.cancel(projectId);
       } else if (actionType === 'submit_milestone') {
         // Freelancer submits deliverable for a milestone
+        const numProjectId = Number(projectId);
+
+        // Optimistic update: immediately show milestone as 'submitted' in the UI
+        const currentSubs = get().milestoneSubmissions[numProjectId] || [];
+        const optimisticSub = {
+          id: -Date.now(), // temp negative ID
+          projectId: numProjectId,
+          milestoneNum: payload.milestoneId,
+          freelancerId: 0,
+          deliverableUrl: payload.link,
+          description: payload.description || null,
+          status: 'submitted' as const,
+          completionTxId: payload.completionTxId || null,
+          releaseTxId: null,
+          submittedAt: new Date().toISOString(),
+          reviewedAt: null,
+        };
+        set((s) => ({
+          milestoneSubmissions: {
+            ...s.milestoneSubmissions,
+            [numProjectId]: [...currentSubs, optimisticSub],
+          },
+        }));
+
         await api.milestones.submit({
-          projectId: Number(projectId),
+          projectId: numProjectId,
           milestoneNum: payload.milestoneId,
           deliverableUrl: payload.link,
           description: payload.description,
           completionTxId: payload.completionTxId,
         });
-        // Refresh milestone submissions for this project
-        await get().fetchMilestoneSubmissions(Number(projectId));
+        // Replace optimistic data with real server data
+        await get().fetchMilestoneSubmissions(numProjectId);
       } else if (actionType === 'approve_milestone') {
         // Client approves a milestone submission
+        const numProjectId = Number(projectId);
+
+        // Optimistic update: immediately show milestone as 'approved'
+        set((s) => ({
+          milestoneSubmissions: {
+            ...s.milestoneSubmissions,
+            [numProjectId]: (s.milestoneSubmissions[numProjectId] || []).map((sub) =>
+              sub.id === payload.submissionId
+                ? { ...sub, status: 'approved' as const, releaseTxId: payload.releaseTxId || 'pending' }
+                : sub
+            ),
+          },
+        }));
+
         await api.milestones.approve(
           payload.submissionId,
           payload.releaseTxId || 'pending',
         );
-        await get().fetchMilestoneSubmissions(Number(projectId));
+        await get().fetchMilestoneSubmissions(numProjectId);
       } else if (actionType === 'reject_milestone') {
+        const numProjectId = Number(projectId);
+
+        // Optimistic update: immediately show milestone as 'rejected' → resets to 'pending' in enrichedMilestones
+        set((s) => ({
+          milestoneSubmissions: {
+            ...s.milestoneSubmissions,
+            [numProjectId]: (s.milestoneSubmissions[numProjectId] || []).map((sub) =>
+              sub.id === payload.submissionId
+                ? { ...sub, status: 'rejected' as const }
+                : sub
+            ),
+          },
+        }));
+
         await api.milestones.reject(payload.submissionId);
-        await get().fetchMilestoneSubmissions(Number(projectId));
+        await get().fetchMilestoneSubmissions(numProjectId);
       }
       await get().fetchProjects();
       await get().fetchMyProjects();

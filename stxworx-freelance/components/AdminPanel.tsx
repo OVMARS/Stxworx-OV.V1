@@ -1,17 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
-import { Hexagon, LayoutDashboard, Users, Briefcase, AlertTriangle, Database, LogOut, Search, Bell } from 'lucide-react';
+import { Hexagon, LayoutDashboard, Users, Briefcase, AlertTriangle, Database, LogOut, Search, Bell, Shield } from 'lucide-react';
 import AdminUsers from './admin/AdminUsers';
 import AdminJobs from './admin/AdminJobs';
 import AdminDisputes from './admin/AdminDisputes';
 import AdminNFT from './admin/AdminNFT';
+import AdminEscrow from './admin/AdminEscrow';
 import { useAppStore } from '../stores/useAppStore';
 
 interface AdminPanelProps {
   onLogout: () => void;
 }
 
-type AdminTab = 'overview' | 'users' | 'jobs' | 'disputes' | 'nft';
+type AdminTab = 'overview' | 'users' | 'jobs' | 'disputes' | 'escrow' | 'nft';
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -41,36 +42,96 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
       case 'users': return <AdminUsers />;
       case 'jobs': return <AdminJobs />;
       case 'disputes': return <AdminDisputes />;
+      case 'escrow': return <AdminEscrow />;
       case 'nft': return <AdminNFT />;
       case 'overview':
       default:
+        const s = adminDashboardStats;
         return (
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4">
-              {/* Stat Cards */}
-              <div className="bg-[#0b0f19] p-6 rounded-2xl border border-slate-800 relative overflow-hidden">
-                 <div className="absolute top-0 right-0 p-16 bg-orange-600/5 rounded-full blur-2xl"></div>
-                 <div className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Total Users</div>
-                 <div className="text-3xl font-black text-white">{adminDashboardStats?.totalUsers ?? '—'}</div>
-                 <div className="text-slate-500 text-xs font-bold mt-2">Registered accounts</div>
-              </div>
-              <div className="bg-[#0b0f19] p-6 rounded-2xl border border-slate-800">
-                 <div className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Total Projects</div>
-                 <div className="text-3xl font-black text-white">{adminDashboardStats?.totalProjects ?? '—'}</div>
-                 <div className="text-slate-500 text-xs font-bold mt-2">All time</div>
-              </div>
-              <div className="bg-[#0b0f19] p-6 rounded-2xl border border-slate-800">
-                 <div className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Active Projects</div>
-                 <div className="text-3xl font-black text-white text-blue-500">{adminDashboardStats?.activeProjects ?? '—'}</div>
-                 <div className="text-blue-400/60 text-xs font-bold mt-2">Currently in progress</div>
-              </div>
-              <div className="bg-[#0b0f19] p-6 rounded-2xl border border-slate-800">
-                 <div className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Open Disputes</div>
-                 <div className="text-3xl font-black text-white text-red-500">{adminDashboardStats?.openDisputes ?? '—'}</div>
-                 <div className="text-red-400/60 text-xs font-bold mt-2">Requires attention</div>
+           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+              {/* Platform Overview */}
+              <div>
+                 <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">Platform Overview</h3>
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-[#0b0f19] p-5 rounded-2xl border border-slate-800 relative overflow-hidden">
+                       <div className="absolute top-0 right-0 w-20 h-20 bg-orange-600/5 rounded-full blur-2xl"></div>
+                       <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Users</div>
+                       <div className="text-3xl font-black text-white">{s?.totalUsers ?? '—'}</div>
+                       <div className="flex gap-3 mt-2 text-[10px] font-bold">
+                          <span className="text-blue-400">{s?.clientCount ?? 0} clients</span>
+                          <span className="text-orange-400">{s?.freelancerCount ?? 0} freelancers</span>
+                       </div>
+                    </div>
+                    <div className="bg-[#0b0f19] p-5 rounded-2xl border border-slate-800">
+                       <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Projects</div>
+                       <div className="text-3xl font-black text-white">{s?.totalProjects ?? '—'}</div>
+                       <div className="text-slate-500 text-[10px] font-bold mt-2">All time</div>
+                    </div>
+                    <div className="bg-[#0b0f19] p-5 rounded-2xl border border-slate-800">
+                       <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Active Projects</div>
+                       <div className="text-3xl font-black text-blue-500">{s?.activeProjects ?? '—'}</div>
+                       <div className="text-blue-400/60 text-[10px] font-bold mt-2">Currently in progress</div>
+                    </div>
+                    <div className="bg-[#0b0f19] p-5 rounded-2xl border border-slate-800">
+                       <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Open Disputes</div>
+                       <div className="text-3xl font-black text-red-500">{s?.openDisputes ?? '—'}</div>
+                       <div className="text-red-400/60 text-[10px] font-bold mt-2">Requires attention</div>
+                    </div>
+                 </div>
               </div>
 
-              {/* Recent Activity Section could go here */}
-              <div className="col-span-full bg-[#0b0f19] p-6 rounded-2xl border border-slate-800 mt-4">
+              {/* Escrow Health */}
+              <div>
+                 <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">Escrow Health</h3>
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-[#0b0f19] p-5 rounded-2xl border border-slate-800">
+                       <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Funded</div>
+                       <div className="text-2xl font-black text-orange-400">{s?.fundedProjects ?? '—'}</div>
+                       <div className="text-orange-400/50 text-[10px] font-bold mt-1">On-chain escrows</div>
+                    </div>
+                    <div className="bg-[#0b0f19] p-5 rounded-2xl border border-slate-800">
+                       <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Completed</div>
+                       <div className="text-2xl font-black text-green-400">{s?.completedProjects ?? '—'}</div>
+                       <div className="text-green-400/50 text-[10px] font-bold mt-1">Successfully delivered</div>
+                    </div>
+                    <div className="bg-[#0b0f19] p-5 rounded-2xl border border-slate-800">
+                       <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Refunded</div>
+                       <div className="text-2xl font-black text-red-400">{s?.refundedProjects ?? '—'}</div>
+                       <div className="text-red-400/50 text-[10px] font-bold mt-1">Funds returned</div>
+                    </div>
+                    <div className="bg-[#0b0f19] p-5 rounded-2xl border border-slate-800">
+                       <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Disputes Resolved</div>
+                       <div className="text-2xl font-black text-yellow-400">{s?.resolvedDisputes ?? '—'}</div>
+                       <div className="text-yellow-400/50 text-[10px] font-bold mt-1">Closed cases</div>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Milestone Pipeline */}
+              <div>
+                 <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">Milestone Pipeline</h3>
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-[#0b0f19] p-5 rounded-2xl border border-slate-800">
+                       <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Submissions</div>
+                       <div className="text-2xl font-black text-white">{s?.totalSubmissions ?? '—'}</div>
+                    </div>
+                    <div className="bg-[#0b0f19] p-5 rounded-2xl border border-slate-800">
+                       <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Pending Review</div>
+                       <div className="text-2xl font-black text-orange-400">{s?.pendingSubmissions ?? '—'}</div>
+                    </div>
+                    <div className="bg-[#0b0f19] p-5 rounded-2xl border border-slate-800">
+                       <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Approved</div>
+                       <div className="text-2xl font-black text-green-400">{s?.approvedSubmissions ?? '—'}</div>
+                    </div>
+                    <div className="bg-[#0b0f19] p-5 rounded-2xl border border-slate-800">
+                       <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Rejected</div>
+                       <div className="text-2xl font-black text-red-400">{s?.rejectedSubmissions ?? '—'}</div>
+                    </div>
+                 </div>
+              </div>
+
+              {/* System Status */}
+              <div className="bg-[#0b0f19] p-6 rounded-2xl border border-slate-800">
                  <h3 className="text-lg font-bold text-white mb-4">System Status</h3>
                  <div className="flex items-center gap-4 text-sm text-slate-400">
                     <div className="flex items-center gap-2">
@@ -113,6 +174,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
            
            <div className="text-xs font-bold text-slate-600 uppercase tracking-wider px-4 mb-2 mt-6">Management</div>
            <NavItem tab="disputes" icon={AlertTriangle} label="Disputes" />
+           <NavItem tab="escrow" icon={Shield} label="Escrow Mgmt" />
            <NavItem tab="nft" icon={Database} label="NFT Release" />
         </nav>
 
@@ -132,7 +194,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
          {/* Top Header */}
          <header className="h-20 bg-[#020617]/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-8 sticky top-0 z-10">
             <h1 className="text-xl font-bold text-white uppercase tracking-tight">
-               {activeTab === 'nft' ? 'NFT Release' : activeTab === 'disputes' ? 'Dispute Management' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+               {activeTab === 'nft' ? 'NFT Release' : activeTab === 'disputes' ? 'Dispute Management' : activeTab === 'escrow' ? 'Escrow Management' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
             </h1>
             
             <div className="flex items-center gap-6">

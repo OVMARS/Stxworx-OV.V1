@@ -19,8 +19,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
   const [expanded, setExpanded] = React.useState(true);
   const [showDisputeModal, setShowDisputeModal] = React.useState(false);
   const [showReviewModal, setShowReviewModal] = React.useState(false);
-  const [refundPending, setRefundPending] = React.useState(false);
-  const [emergencyRefundPending, setEmergencyRefundPending] = React.useState(false);
   const { milestoneSubmissions, fetchMilestoneSubmissions, projectDisputes, fetchProjectDisputes } = useAppStore();
 
   // Fetch milestone submissions for active projects
@@ -57,60 +55,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
   const progress = (completedMilestones / 4) * 100;
 
   const usdValue = tokenToUsd(project.totalBudget, project.tokenType);
-
-  const handleRequestRefund = async () => {
-    if (!project.onChainId) {
-      alert('This project has no on-chain escrow ID. Cannot request refund.');
-      return;
-    }
-    setRefundPending(true);
-    try {
-      const { requestRefundContractCall } = await import('../lib/contracts');
-      await requestRefundContractCall(
-        project.onChainId,
-        project.tokenType as 'STX' | 'sBTC',
-        async (txData) => {
-          console.log('request-refund TX sent:', txData.txId);
-          onAction(project.id, 'cancel');
-          setRefundPending(false);
-        },
-        () => {
-          console.log('request-refund TX cancelled');
-          setRefundPending(false);
-        }
-      );
-    } catch (err: any) {
-      console.error('request-refund failed:', err);
-      setRefundPending(false);
-    }
-  };
-
-  const handleEmergencyRefund = async () => {
-    if (!project.onChainId) {
-      alert('This project has no on-chain escrow ID. Cannot request emergency refund.');
-      return;
-    }
-    setEmergencyRefundPending(true);
-    try {
-      const { emergencyRefundContractCall } = await import('../lib/contracts');
-      await emergencyRefundContractCall(
-        project.onChainId,
-        project.tokenType as 'STX' | 'sBTC',
-        async (txData) => {
-          console.log('emergency-refund TX sent:', txData.txId);
-          onAction(project.id, 'cancel');
-          setEmergencyRefundPending(false);
-        },
-        () => {
-          console.log('emergency-refund TX cancelled');
-          setEmergencyRefundPending(false);
-        }
-      );
-    } catch (err: any) {
-      console.error('emergency-refund failed:', err);
-      setEmergencyRefundPending(false);
-    }
-  };
 
   return (
     <div className="bg-[#0b0f19] rounded-xl shadow-lg border border-slate-800 overflow-hidden hover:border-orange-500/50 transition-all duration-300 relative group">
@@ -194,16 +138,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
             <ArrowUpRight className={`h-3 w-3 transition-transform ${expanded ? 'rotate-45' : ''}`} />
           </button>
 
-          {role === 'client' && !project.isFunded && (
-            <button
-              onClick={() => onAction(project.id, 'fund')}
-              disabled={isProcessing}
-              className="px-5 py-2 bg-orange-600 text-white text-xs font-black uppercase tracking-wider rounded hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_15px_rgba(234,88,12,0.3)]"
-            >
-              {isProcessing ? 'Confirming...' : 'Lock Funds (Escrow)'}
-            </button>
-          )}
-
           {/* Dispute button — available on active projects */}
           {isActive && !hasOpenDispute && (
             <button
@@ -229,30 +163,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
             </button>
           )}
 
-          {/* Refund buttons — client only, active funded projects */}
-          {role === 'client' && isActive && project.isFunded && (
-            <div className="flex items-center gap-2">
-              {/* Full Refund — only if no milestones started */}
-              {completedMilestones === 0 && (
-                <button
-                  onClick={handleRequestRefund}
-                  disabled={refundPending || isProcessing}
-                  className="px-4 py-2 bg-yellow-950/40 text-yellow-400 text-xs font-bold uppercase tracking-wider rounded hover:bg-yellow-600 hover:text-white border border-yellow-900/30 transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {refundPending ? 'Signing TX...' : <><AlertCircle className="w-3 h-3" /> Full Refund</>}
-                </button>
-              )}
-              {/* Emergency Refund — partial refund after ~24h timeout */}
-              <button
-                onClick={handleEmergencyRefund}
-                disabled={emergencyRefundPending || isProcessing}
-                className="px-4 py-2 bg-red-950/40 text-red-400 text-xs font-bold uppercase tracking-wider rounded hover:bg-red-600 hover:text-white border border-red-900/30 transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Available after ~24 hours if project is inactive. Refunds unreleased milestones."
-              >
-                {emergencyRefundPending ? 'Signing TX...' : <><Shield className="w-3 h-3" /> Emergency Refund</>}
-              </button>
-            </div>
-          )}
         </div>
 
         {expanded && (

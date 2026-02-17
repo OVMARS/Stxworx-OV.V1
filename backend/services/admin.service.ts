@@ -6,7 +6,7 @@ import {
   reputationNfts,
   milestoneSubmissions,
 } from "@shared/schema";
-import { eq, sql, and, lt, ne, count } from "drizzle-orm";
+import { eq, sql, and, lt, ne, count, sum, inArray } from "drizzle-orm";
 
 export const adminService = {
   async getDashboard() {
@@ -23,16 +23,83 @@ export const adminService = {
       .from(projects)
       .where(eq(projects.status, "active"));
 
+    const [completedProjectCount] = await db
+      .select({ count: count() })
+      .from(projects)
+      .where(eq(projects.status, "completed"));
+
+    const [refundedProjectCount] = await db
+      .select({ count: count() })
+      .from(projects)
+      .where(eq(projects.status, "refunded"));
+
     const [openDisputeCount] = await db
       .select({ count: count() })
       .from(disputes)
       .where(eq(disputes.status, "open"));
 
+    const [resolvedDisputeCount] = await db
+      .select({ count: count() })
+      .from(disputes)
+      .where(eq(disputes.status, "resolved"));
+
+    // Funded projects = those with an escrow TX
+    const [fundedProjectCount] = await db
+      .select({ count: count() })
+      .from(projects)
+      .where(
+        and(
+          sql`${projects.escrowTxId} IS NOT NULL`,
+          sql`${projects.escrowTxId} != ''`
+        )
+      );
+
+    // Milestone submission stats
+    const [totalSubmissions] = await db
+      .select({ count: count() })
+      .from(milestoneSubmissions);
+
+    const [approvedSubmissions] = await db
+      .select({ count: count() })
+      .from(milestoneSubmissions)
+      .where(eq(milestoneSubmissions.status, "approved"));
+
+    const [pendingSubmissions] = await db
+      .select({ count: count() })
+      .from(milestoneSubmissions)
+      .where(eq(milestoneSubmissions.status, "submitted"));
+
+    const [rejectedSubmissions] = await db
+      .select({ count: count() })
+      .from(milestoneSubmissions)
+      .where(eq(milestoneSubmissions.status, "rejected"));
+
+    // Freelancer count
+    const [freelancerCount] = await db
+      .select({ count: count() })
+      .from(users)
+      .where(eq(users.role, "freelancer"));
+
+    const [clientCount] = await db
+      .select({ count: count() })
+      .from(users)
+      .where(eq(users.role, "client"));
+
     return {
       totalUsers: userCount.count,
       totalProjects: projectCount.count,
       activeProjects: activeProjectCount.count,
+      completedProjects: completedProjectCount.count,
+      refundedProjects: refundedProjectCount.count,
+      fundedProjects: fundedProjectCount.count,
       openDisputes: openDisputeCount.count,
+      resolvedDisputes: resolvedDisputeCount.count,
+      totalSubmissions: totalSubmissions.count,
+      approvedSubmissions: approvedSubmissions.count,
+      pendingSubmissions: pendingSubmissions.count,
+      rejectedSubmissions: rejectedSubmissions.count,
+      freelancerCount: freelancerCount.count,
+      clientCount: clientCount.count,
     };
   },
 
@@ -66,8 +133,7 @@ export const adminService = {
   async getAllDisputes() {
     return db
       .select()
-      .from(disputes)
-      .where(eq(disputes.status, "open"));
+      .from(disputes);
   },
 
   async resolveDispute(

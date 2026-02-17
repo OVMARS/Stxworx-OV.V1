@@ -151,7 +151,17 @@ export interface AdminDashboardStats {
   totalUsers: number;
   totalProjects: number;
   activeProjects: number;
+  completedProjects: number;
+  refundedProjects: number;
+  fundedProjects: number;
   openDisputes: number;
+  resolvedDisputes: number;
+  totalSubmissions: number;
+  approvedSubmissions: number;
+  pendingSubmissions: number;
+  rejectedSubmissions: number;
+  freelancerCount: number;
+  clientCount: number;
 }
 
 export interface LeaderboardEntry {
