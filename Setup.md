@@ -230,7 +230,7 @@ npm run dev
 |---------|-----|
 | **Frontend** | http://localhost:3000 |
 | **Backend API** | http://localhost:5001/api |
-| **Admin Dashboard** | http://localhost:3000/admin |
+| **Admin Dashboard** | http://localhost:3000/stx-ops-9x7k |
 
 > The Vite dev server proxies all `/api` requests to the backend at `http://localhost:5001`, so you only need to access port 3000 in your browser.
 
