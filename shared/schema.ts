@@ -1,6 +1,5 @@
 import {
   mysqlTable,
-  serial,
   varchar,
   text,
   boolean,
@@ -53,7 +52,7 @@ export const NFT_TYPES = [
 // Tables
 
 export const users = mysqlTable("users", {
-  id: serial("id").primaryKey(),
+  id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
   stxAddress: varchar("stx_address", { length: 255 }).unique().notNull(),
   username: varchar("username", { length: 100 }),
   role: mysqlEnum("role", [...USER_ROLES]).notNull(),
@@ -69,14 +68,14 @@ export const users = mysqlTable("users", {
 });
 
 export const admins = mysqlTable("admins", {
-  id: serial("id").primaryKey(),
+  id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
   username: varchar("username", { length: 100 }).unique().notNull(),
   passwordHash: varchar("password_hash", { length: 500 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const projects = mysqlTable("projects", {
-  id: serial("id").primaryKey(),
+  id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
   clientId: bigint("client_id", { mode: "number", unsigned: true })
     .references(() => users.id)
     .notNull(),
@@ -107,7 +106,7 @@ export const projects = mysqlTable("projects", {
 });
 
 export const proposals = mysqlTable("proposals", {
-  id: serial("id").primaryKey(),
+  id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
   projectId: bigint("project_id", { mode: "number", unsigned: true })
     .references(() => projects.id)
     .notNull(),
@@ -121,7 +120,7 @@ export const proposals = mysqlTable("proposals", {
 });
 
 export const milestoneSubmissions = mysqlTable("milestone_submissions", {
-  id: serial("id").primaryKey(),
+  id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
   projectId: bigint("project_id", { mode: "number", unsigned: true })
     .references(() => projects.id)
     .notNull(),
@@ -139,7 +138,7 @@ export const milestoneSubmissions = mysqlTable("milestone_submissions", {
 });
 
 export const disputes = mysqlTable("disputes", {
-  id: serial("id").primaryKey(),
+  id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
   projectId: bigint("project_id", { mode: "number", unsigned: true })
     .references(() => projects.id)
     .notNull(),
@@ -159,7 +158,7 @@ export const disputes = mysqlTable("disputes", {
 });
 
 export const reviews = mysqlTable("reviews", {
-  id: serial("id").primaryKey(),
+  id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
   projectId: bigint("project_id", { mode: "number", unsigned: true })
     .references(() => projects.id)
     .notNull(),
@@ -175,7 +174,7 @@ export const reviews = mysqlTable("reviews", {
 });
 
 export const categories = mysqlTable("categories", {
-  id: serial("id").primaryKey(),
+  id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
   name: varchar("name", { length: 100 }).unique().notNull(),
   icon: varchar("icon", { length: 50 }).notNull(),
   subcategories: json("subcategories").$type<string[]>().notNull(),
@@ -193,7 +192,7 @@ export const NOTIFICATION_TYPES = [
 ] as const;
 
 export const notifications = mysqlTable("notifications", {
-  id: serial("id").primaryKey(),
+  id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
   userId: bigint("user_id", { mode: "number", unsigned: true })
     .references(() => users.id)
     .notNull(),
@@ -206,7 +205,7 @@ export const notifications = mysqlTable("notifications", {
 });
 
 export const reputationNfts = mysqlTable("reputation_nfts", {
-  id: serial("id").primaryKey(),
+  id: bigint("id", { mode: "number", unsigned: true }).autoincrement().primaryKey(),
   recipientId: bigint("recipient_id", { mode: "number", unsigned: true })
     .references(() => users.id)
     .notNull(),
