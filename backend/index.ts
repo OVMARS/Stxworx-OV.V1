@@ -37,6 +37,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Trust first proxy (Hostinger LiteSpeed)
+app.set("trust proxy", 1);
+
 // Global rate limiting
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
