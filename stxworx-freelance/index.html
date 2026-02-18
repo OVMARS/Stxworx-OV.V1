@@ -13,6 +13,14 @@
         background-color: #020617;
         color: #f8fafc;
       }
+      /* Hide scrollbar for horizontal scroll containers */
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      /* Custom scrollbar for dropdowns */
+      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
   </head>
   <body>

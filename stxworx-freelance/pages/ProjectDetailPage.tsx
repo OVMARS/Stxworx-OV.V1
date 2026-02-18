@@ -113,11 +113,11 @@ const ProjectDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Back button */}
       <button
         onClick={() => navigate('/client')}
-        className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 text-sm font-bold uppercase tracking-wider"
+        className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-5 sm:mb-8 text-xs sm:text-sm font-bold uppercase tracking-wider"
       >
         <ArrowLeft className="w-4 h-4" /> Back to Dashboard
       </button>
@@ -132,11 +132,11 @@ const ProjectDetailPage: React.FC = () => {
 
       {/* Escrow Deploy Banner */}
       {needsEscrow && (
-        <div className="mt-6 bg-orange-950/20 border border-orange-900/50 rounded-xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="mt-4 sm:mt-6 bg-orange-950/20 border border-orange-900/50 rounded-xl p-4 sm:p-6 flex flex-col gap-4">
           <div className="flex items-start gap-3">
             <Shield className="w-5 h-5 text-orange-500 mt-0.5 shrink-0" />
             <div>
-              <h4 className="text-sm font-bold text-white uppercase tracking-wider">
+              <h4 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
                 Freelancer Accepted — Deploy Escrow
               </h4>
               <p className="text-xs text-slate-400 mt-1">
@@ -148,7 +148,7 @@ const ProjectDetailPage: React.FC = () => {
           <button
             onClick={handleDeployEscrow}
             disabled={deployingEscrow || isProcessing}
-            className="px-6 py-3 bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-wider rounded-xl shadow-lg shadow-orange-900/20 flex items-center gap-2 transition-all hover:scale-105 text-sm whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-5 sm:px-6 py-3 bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-wider rounded-xl shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2 transition-all hover:scale-105 text-xs sm:text-sm whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {deployingEscrow ? (
               <span className="animate-pulse">Deploying...</span>
@@ -160,10 +160,10 @@ const ProjectDetailPage: React.FC = () => {
       )}
 
       {/* Applicants Section */}
-      <div className="mt-8">
-        <div className="flex items-center gap-3 mb-6">
-          <Users className="w-5 h-5 text-orange-500" />
-          <h2 className="text-xl font-black text-white uppercase tracking-tight">
+      <div className="mt-6 sm:mt-8">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <Users className="w-4 sm:w-5 h-4 sm:h-5 text-orange-500" />
+          <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
             Applicants ({proposals.length})
           </h2>
           {pendingProposals.length > 0 && (
@@ -238,14 +238,14 @@ function renderProposalCard(
   const address = proposal.freelancerAddress || '';
 
   return (
-    <div className="bg-[#0b0f19] rounded-xl border border-slate-800 p-5 hover:border-slate-700 transition-all">
-      <div className="flex items-start gap-4">
+    <div className="bg-[#0b0f19] rounded-xl border border-slate-800 p-4 sm:p-5 hover:border-slate-700 transition-all">
+      <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
         {/* Avatar */}
-        <div className="shrink-0">
+        <div className="shrink-0 hidden sm:block">
           <img
             src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${address || proposal.freelancerId}`}
             alt="avatar"
-            className="w-12 h-12 rounded-full bg-slate-800 border border-slate-700"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-800 border border-slate-700"
           />
         </div>
 
@@ -282,18 +282,18 @@ function renderProposalCard(
 
         {/* Actions */}
         {showActions && (
-          <div className="flex flex-col gap-2 shrink-0">
+          <div className="flex sm:flex-col gap-2 shrink-0 w-full sm:w-auto">
             <button
               onClick={() => onAccept?.(proposal.id)}
               disabled={isProcessing}
-              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 disabled:opacity-40 shadow-lg shadow-emerald-900/20"
+              className="flex-1 sm:flex-none px-4 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-40 shadow-lg shadow-emerald-900/20"
             >
               <CheckCircle2 className="w-3.5 h-3.5" /> Accept
             </button>
             <button
               onClick={() => onReject?.(proposal.id)}
               disabled={isProcessing}
-              className="px-4 py-2.5 bg-slate-800 hover:bg-red-600/80 text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 disabled:opacity-40"
+              className="flex-1 sm:flex-none px-4 py-2 sm:py-2.5 bg-slate-800 hover:bg-red-600/80 text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-40"
             >
               <XCircle className="w-3.5 h-3.5" /> Reject
             </button>

@@ -150,12 +150,12 @@ const AdminEscrow: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-            <Shield className="w-6 h-6 text-orange-500" /> Escrow Management
+          <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+            <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" /> Escrow Management
           </h2>
-          <p className="text-slate-400 text-sm mt-1">Monitor, release, and refund on-chain escrow contracts.</p>
+          <p className="text-slate-400 text-xs sm:text-sm mt-1">Monitor, release, and refund on-chain escrow contracts.</p>
         </div>
         <button
           onClick={handleRefresh}
@@ -167,7 +167,7 @@ const AdminEscrow: React.FC = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
         {[
           { label: 'Total Escrows', value: stats.totalEscrows, color: 'text-white', icon: <Shield className="w-4 h-4 text-orange-500" /> },
           { label: 'Active', value: stats.activeEscrows, color: 'text-blue-400', icon: <Play className="w-4 h-4 text-blue-500" /> },
@@ -186,7 +186,7 @@ const AdminEscrow: React.FC = () => {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
         {(['all', 'active', 'disputed', 'completed', 'refunded'] as EscrowFilter[]).map((f) => (
           <button
             key={f}

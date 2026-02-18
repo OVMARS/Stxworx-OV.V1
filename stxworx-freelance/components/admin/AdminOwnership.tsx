@@ -142,12 +142,12 @@ const AdminOwnership: React.FC = () => {
    return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
          {/* Header */}
-         <div className="flex justify-between items-center">
+         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-               <h2 className="text-2xl font-black text-white uppercase tracking-tight">Contract Ownership</h2>
-               <p className="text-slate-400 text-sm">
+               <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">Contract Ownership</h2>
+               <p className="text-slate-400 text-xs sm:text-sm">
                   Manage who controls admin functions on{' '}
-                  <span className="font-mono text-orange-400">{CONTRACT_ADDRESS.slice(0, 8)}…{CONTRACT_ADDRESS.slice(-4)}.{CONTRACT_NAME}</span>
+                  <span className="font-mono text-orange-400 break-all">{CONTRACT_ADDRESS.slice(0, 8)}…{CONTRACT_ADDRESS.slice(-4)}.{CONTRACT_NAME}</span>
                </p>
             </div>
             <button
@@ -162,7 +162,7 @@ const AdminOwnership: React.FC = () => {
          {/* Current State Cards */}
          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Current Owner */}
-            <div className="bg-[#0b0f19] rounded-xl border border-slate-800 p-6 relative overflow-hidden">
+            <div className="bg-[#0b0f19] rounded-xl border border-slate-800 p-4 sm:p-6 relative overflow-hidden">
                <div className="absolute top-0 right-0 w-24 h-24 bg-orange-600/5 rounded-full blur-2xl"></div>
                <div className="flex items-center gap-2 mb-3">
                   <Crown className="w-5 h-5 text-orange-500" />
@@ -191,7 +191,7 @@ const AdminOwnership: React.FC = () => {
             </div>
 
             {/* Pending Proposal */}
-            <div className={`bg-[#0b0f19] rounded-xl border p-6 relative overflow-hidden ${hasPendingProposal ? 'border-orange-600/30' : 'border-slate-800'}`}>
+            <div className={`bg-[#0b0f19] rounded-xl border p-4 sm:p-6 relative overflow-hidden ${hasPendingProposal ? 'border-orange-600/30' : 'border-slate-800'}`}>
                {hasPendingProposal && (
                   <div className="absolute top-0 right-0 w-24 h-24 bg-orange-600/10 rounded-full blur-2xl"></div>
                )}

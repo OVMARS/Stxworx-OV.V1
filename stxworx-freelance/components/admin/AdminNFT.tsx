@@ -58,19 +58,19 @@ const AdminNFT: React.FC = () => {
 
    return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-         <div className="flex justify-between items-center">
+         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-               <h2 className="text-2xl font-black text-white uppercase tracking-tight">NFT Release Control</h2>
-               <p className="text-slate-400 text-sm">Mint reputation badges and manage NFT records.</p>
+               <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">NFT Release Control</h2>
+               <p className="text-slate-400 text-xs sm:text-sm">Mint reputation badges and manage NFT records.</p>
             </div>
-            <button onClick={() => fetchAdminNFTs()} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors">
+            <button onClick={() => fetchAdminNFTs()} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors shrink-0">
                <RefreshCw className="w-4 h-4" />
             </button>
          </div>
 
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Create NFT Form */}
-            <div className="lg:col-span-1 bg-[#0b0f19] rounded-xl border border-slate-800 p-6">
+            <div className="lg:col-span-1 bg-[#0b0f19] rounded-xl border border-slate-800 p-4 sm:p-6">
                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                   <Hexagon className="w-5 h-5 text-orange-500" /> Issue Reputation NFT
                </h3>
@@ -148,9 +148,9 @@ const AdminNFT: React.FC = () => {
                   </div>
                )}
                {adminNFTs.map((nft) => (
-                  <div key={nft.id} className="bg-[#0b0f19] rounded-xl border border-slate-800 p-4 flex items-start gap-4 hover:border-orange-500/30 transition-all group">
-                     <div className="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-800 group-hover:border-orange-500 transition-colors shrink-0">
-                        <Award className="w-6 h-6 text-orange-500" />
+                  <div key={nft.id} className="bg-[#0b0f19] rounded-xl border border-slate-800 p-4 flex flex-col sm:flex-row items-start gap-4 hover:border-orange-500/30 transition-all group">
+                     <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-800 group-hover:border-orange-500 transition-colors shrink-0">
+                        <Award className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
                      </div>
                      <div className="flex-1 min-w-0">
                         <h4 className="font-bold text-white">{nft.name}</h4>
@@ -164,7 +164,7 @@ const AdminNFT: React.FC = () => {
                         {nft.description && <p className="text-xs text-slate-500 mt-1 truncate">{nft.description}</p>}
                         {nft.mintTxId && <p className="text-[10px] text-slate-600 font-mono mt-1 truncate">TX: {nft.mintTxId}</p>}
                      </div>
-                     <div className="text-right shrink-0">
+                     <div className="sm:text-right shrink-0 w-full sm:w-auto">
                         {!nft.minted && (
                            <div className="flex items-center gap-2">
                               <input
@@ -173,7 +173,7 @@ const AdminNFT: React.FC = () => {
                                  value={confirmingId === nft.id ? mintTxId : ''}
                                  onFocus={() => setConfirmingId(nft.id)}
                                  onChange={(e) => setMintTxId(e.target.value)}
-                                 className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-[10px] text-white w-32 focus:border-orange-500 focus:outline-none"
+                                 className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-[10px] text-white flex-1 sm:w-32 focus:border-orange-500 focus:outline-none"
                               />
                               <button
                                  onClick={() => handleConfirmMint(nft.id)}

@@ -58,27 +58,27 @@ const EditProfile: React.FC<EditProfileProps> = ({ profile, onSave, onCancel, is
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-center mb-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex justify-between items-center mb-6 sm:mb-8">
         <div>
-           <h1 className="text-3xl font-black text-white uppercase tracking-tight">Edit Profile</h1>
-           <p className="text-slate-400 text-sm mt-1">Update your professional information seen by clients.</p>
+           <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">Edit Profile</h1>
+           <p className="text-slate-400 text-xs sm:text-sm mt-1">Update your professional information seen by clients.</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         
         {/* Social Verification Section */}
-        <div className="bg-[#0b0f19] p-6 rounded-2xl border border-slate-800 relative overflow-hidden">
+        <div className="bg-[#0b0f19] p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-800 relative overflow-hidden">
            <div className="absolute top-0 right-0 p-24 bg-blue-500/5 rounded-full blur-2xl pointer-events-none"></div>
-           <h3 className="text-lg font-bold text-white uppercase tracking-wide mb-6 flex items-center gap-2 relative z-10">
+           <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-wide mb-4 sm:mb-6 flex items-center gap-2 relative z-10">
              <Shield className="w-5 h-5 text-purple-500" /> Identity Verification
            </h3>
            
-           <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800 relative z-10">
-              <div className="flex items-center gap-4">
-                 <div className="p-3 bg-[#1DA1F2]/10 rounded-full border border-[#1DA1F2]/20">
-                    <Twitter className="w-6 h-6 text-[#1DA1F2]" />
+           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-slate-900/50 rounded-xl border border-slate-800 relative z-10">
+              <div className="flex items-center gap-3 sm:gap-4">
+                 <div className="p-2 sm:p-3 bg-[#1DA1F2]/10 rounded-full border border-[#1DA1F2]/20 shrink-0">
+                    <Twitter className="w-5 h-5 sm:w-6 sm:h-6 text-[#1DA1F2]" />
                  </div>
                  <div>
                     <div className="font-bold text-white text-sm">X (formerly Twitter)</div>
@@ -105,14 +105,14 @@ const EditProfile: React.FC<EditProfileProps> = ({ profile, onSave, onCancel, is
         </div>
 
         {/* Basic Info Section */}
-        <div className="bg-[#0b0f19] p-6 rounded-2xl border border-slate-800">
-           <h3 className="text-lg font-bold text-white uppercase tracking-wide mb-6 flex items-center gap-2">
+        <div className="bg-[#0b0f19] p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-800">
+           <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-wide mb-4 sm:mb-6 flex items-center gap-2">
              <User className="w-5 h-5 text-orange-500" /> Basic Information
            </h3>
            
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="col-span-2 flex items-center gap-6 mb-4">
-                 <div className="w-24 h-24 rounded-full bg-slate-800 border-2 border-slate-700 overflow-hidden flex items-center justify-center relative group cursor-pointer">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div className="col-span-1 md:col-span-2 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mb-4">
+                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-800 border-2 border-slate-700 overflow-hidden flex items-center justify-center relative group cursor-pointer shrink-0">
                     <img src={formData.avatar} alt="Avatar" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
                        <ImageIcon className="w-6 h-6 text-white" />
@@ -154,7 +154,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ profile, onSave, onCancel, is
                 />
               </div>
 
-              <div className="col-span-2">
+              <div className="col-span-1 md:col-span-2">
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-2">Bio / About</label>
                 <textarea 
                   name="about"
@@ -169,8 +169,8 @@ const EditProfile: React.FC<EditProfileProps> = ({ profile, onSave, onCancel, is
         </div>
 
         {/* Skills Section */}
-        <div className="bg-[#0b0f19] p-6 rounded-2xl border border-slate-800">
-           <h3 className="text-lg font-bold text-white uppercase tracking-wide mb-6 flex items-center gap-2">
+        <div className="bg-[#0b0f19] p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-800">
+           <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-wide mb-4 sm:mb-6 flex items-center gap-2">
              <Code className="w-5 h-5 text-blue-500" /> Skills & Technologies
            </h3>
 
@@ -212,8 +212,8 @@ const EditProfile: React.FC<EditProfileProps> = ({ profile, onSave, onCancel, is
         </div>
 
         {/* Portfolio Section */}
-        <div className="bg-[#0b0f19] p-6 rounded-2xl border border-slate-800">
-           <h3 className="text-lg font-bold text-white uppercase tracking-wide mb-6 flex items-center gap-2">
+        <div className="bg-[#0b0f19] p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-800">
+           <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-wide mb-4 sm:mb-6 flex items-center gap-2">
              <Briefcase className="w-5 h-5 text-green-500" /> Portfolio Images
            </h3>
 
@@ -257,18 +257,18 @@ const EditProfile: React.FC<EditProfileProps> = ({ profile, onSave, onCancel, is
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-4 pt-4">
+        <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 pt-4">
            <button
              type="submit"
              disabled={isSaving}
-             className="flex-1 px-6 py-4 bg-orange-600 text-white font-black uppercase tracking-wider rounded-xl hover:bg-orange-500 shadow-[0_0_20px_rgba(234,88,12,0.3)] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+             className="w-full sm:flex-1 px-6 py-3 sm:py-4 bg-orange-600 text-white font-black uppercase tracking-wider rounded-xl hover:bg-orange-500 shadow-[0_0_20px_rgba(234,88,12,0.3)] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
            >
              {isSaving ? 'Saving...' : <><Save className="w-5 h-5" /> Save Profile</>}
            </button>
            <button
              type="button"
              onClick={onCancel}
-             className="px-6 py-4 bg-slate-900 text-slate-400 font-bold uppercase tracking-wider rounded-xl hover:bg-slate-800 border border-slate-800 transition-all"
+             className="w-full sm:w-auto px-6 py-3 sm:py-4 bg-slate-900 text-slate-400 font-bold uppercase tracking-wider rounded-xl hover:bg-slate-800 border border-slate-800 transition-all"
            >
              Cancel
            </button>

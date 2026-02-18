@@ -66,11 +66,11 @@ const BrowseProjectDetailPage: React.FC = () => {
   const applied = hasAppliedToProject(project.id);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Back */}
       <button
         onClick={() => navigate('/browse')}
-        className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 text-sm font-bold uppercase tracking-wider"
+        className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-5 sm:mb-8 text-xs sm:text-sm font-bold uppercase tracking-wider"
       >
         <ArrowLeft className="w-4 h-4" /> Back to Marketplace
       </button>
@@ -99,7 +99,7 @@ const BrowseProjectDetailPage: React.FC = () => {
             </span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight mb-3">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white uppercase tracking-tight mb-3">
             {project.title}
           </h1>
 
@@ -107,10 +107,10 @@ const BrowseProjectDetailPage: React.FC = () => {
             {project.description}
           </p>
 
-          <div className="flex flex-wrap gap-6 text-sm text-slate-500 mb-8">
+          <div className="flex flex-wrap gap-3 sm:gap-6 text-sm text-slate-500 mb-6 sm:mb-8">
             <div className="flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-orange-500" />
-              <span className="text-xl font-black text-white">{formatUSD(usdValue)}</span>
+              <span className="text-lg sm:text-xl font-black text-white">{formatUSD(usdValue)}</span>
               <span className="text-xs font-mono text-slate-600">
                 ({project.totalBudget.toLocaleString()} {project.tokenType})
               </span>
@@ -143,12 +143,12 @@ const BrowseProjectDetailPage: React.FC = () => {
         </div>
 
         {/* Action Footer */}
-        <div className="bg-[#05080f] border-t border-slate-800 px-6 sm:px-8 py-5 flex items-center justify-between">
+        <div className="bg-[#05080f] border-t border-slate-800 px-4 sm:px-6 md:px-8 py-4 sm:py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           {userRole === 'freelancer' && wallet.isConnected && (
             <button
               onClick={() => !applied && setShowApplyModal(true)}
               disabled={applied}
-              className={`px-6 py-3 rounded-xl text-sm font-bold uppercase tracking-wider flex items-center gap-2 transition-all ${
+              className={`w-full sm:w-auto px-5 sm:px-6 py-3 rounded-xl text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
                 applied
                   ? 'bg-emerald-950/30 text-emerald-400 border border-emerald-900/50 cursor-default'
                   : 'bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-900/20 hover:scale-[1.02]'

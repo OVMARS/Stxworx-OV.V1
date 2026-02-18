@@ -13,22 +13,22 @@ const AdminSupport: React.FC = () => {
 
    return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-         <div className="flex justify-between items-center">
+         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-               <h2 className="text-2xl font-black text-white uppercase tracking-tight">Customer Service</h2>
-               <p className="text-slate-400 text-sm">Resolve disputes and user inquiries.</p>
+               <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">Customer Service</h2>
+               <p className="text-slate-400 text-xs sm:text-sm">Resolve disputes and user inquiries.</p>
             </div>
-            <div className="flex gap-2">
-               <button className="px-4 py-2 bg-slate-800 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-700">All Tickets</button>
-               <button className="px-4 py-2 bg-orange-600/10 text-orange-500 text-xs font-bold uppercase rounded-lg border border-orange-500/20">Active Disputes</button>
+            <div className="flex gap-2 w-full sm:w-auto">
+               <button className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-slate-800 text-white text-xs font-bold uppercase rounded-lg hover:bg-slate-700">All Tickets</button>
+               <button className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-orange-600/10 text-orange-500 text-xs font-bold uppercase rounded-lg border border-orange-500/20">Active Disputes</button>
             </div>
          </div>
 
          <div className="space-y-4">
             {tickets.map((ticket) => (
-               <div key={ticket.id} className="bg-[#0b0f19] rounded-xl border border-slate-800 p-6 flex flex-col md:flex-row gap-6 hover:border-slate-700 transition-colors">
+               <div key={ticket.id} className="bg-[#0b0f19] rounded-xl border border-slate-800 p-4 sm:p-6 flex flex-col md:flex-row gap-4 sm:gap-6 hover:border-slate-700 transition-colors">
                   <div className="flex-1">
-                     <div className="flex items-center gap-3 mb-2">
+                     <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${ticket.priority === 'High' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
                            ticket.priority === 'Medium' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
                               'bg-blue-500/10 text-blue-500 border border-blue-500/20'

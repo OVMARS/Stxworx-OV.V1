@@ -20,9 +20,9 @@ const AdminChats: React.FC = () => {
    );
 
    return (
-      <div className="flex h-[calc(100vh-140px)] gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col md:flex-row h-[calc(100vh-140px)] gap-4 md:gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
          {/* Sidebar List */}
-         <div className="w-1/3 bg-[#0b0f19] rounded-xl border border-slate-800 flex flex-col overflow-hidden">
+         <div className="w-full md:w-1/3 bg-[#0b0f19] rounded-xl border border-slate-800 flex flex-col overflow-hidden h-64 md:h-auto shrink-0 md:shrink">
             <div className="p-4 border-b border-slate-800">
                <h3 className="text-white font-bold mb-4 flex items-center gap-2">
                   <MessageCircle className="w-5 h-5 text-orange-500" /> Active Conversations
@@ -74,27 +74,28 @@ const AdminChats: React.FC = () => {
             {selectedConversation ? (
                <>
                   {/* Header */}
-                  <div className="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50">
-                     <div className="flex items-center gap-4">
-                        <div className="flex -space-x-3">
+                  <div className="h-14 md:h-16 border-b border-slate-800 flex items-center justify-between px-4 md:px-6 bg-slate-900/50">
+                     <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                        <div className="flex -space-x-3 shrink-0">
                            {selectedConversation.participants.map((p, i) => (
-                              <img key={i} src={p.avatar} alt={p.name} className="w-10 h-10 rounded-full border-2 border-[#0b0f19]" />
+                              <img key={i} src={p.avatar} alt={p.name} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-[#0b0f19]" />
                            ))}
                         </div>
-                        <div>
-                           <h3 className="text-white font-bold text-sm">Conversation Monitoring</h3>
-                           <p className="text-xs text-slate-500 flex items-center gap-2">
-                              Session ID: <span className="font-mono text-orange-500">{selectedConversation.id}</span>
+                        <div className="min-w-0">
+                           <h3 className="text-white font-bold text-xs md:text-sm">Conversation Monitoring</h3>
+                           <p className="text-xs text-slate-500 flex items-center gap-2 truncate">
+                              Session ID: <span className="font-mono text-orange-500 truncate">{selectedConversation.id}</span>
                            </p>
                         </div>
                      </div>
-                     <div className="px-3 py-1 bg-red-500/10 text-red-500 text-[10px] font-bold uppercase rounded border border-red-500/20">
-                        Admin View Only
+                     <div className="px-2 md:px-3 py-1 bg-red-500/10 text-red-500 text-[10px] font-bold uppercase rounded border border-red-500/20 shrink-0">
+                        <span className="hidden sm:inline">Admin View Only</span>
+                        <span className="sm:hidden">Admin</span>
                      </div>
                   </div>
 
                   {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-[#020617]">
+                  <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar bg-[#020617]">
                      {selectedConversation.messages.map((msg) => {
                         // Check if sender matches the first participant
                         const isParticipant1 = selectedConversation.participants[0] && msg.senderName === selectedConversation.participants[0].name;

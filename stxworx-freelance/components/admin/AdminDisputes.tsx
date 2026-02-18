@@ -221,12 +221,12 @@ const AdminDisputes: React.FC = () => {
    return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
          {/* Header */}
-         <div className="flex justify-between items-center">
+         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-               <h2 className="text-2xl font-black text-white uppercase tracking-tight">Disputes</h2>
-               <p className="text-slate-400 text-sm">Review and resolve on-chain project disputes. Actions require wallet signing.</p>
+               <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">Disputes</h2>
+               <p className="text-slate-400 text-xs sm:text-sm">Review and resolve on-chain project disputes. Actions require wallet signing.</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 shrink-0">
                {/* Wallet status indicator */}
                {isSignedIn && userAddress ? (
                   <div className="flex items-center gap-1.5 bg-green-950/30 border border-green-900/30 rounded-lg px-3 py-1.5">
@@ -237,7 +237,7 @@ const AdminDisputes: React.FC = () => {
                ) : (
                   <div className="flex items-center gap-1.5 bg-red-950/30 border border-red-900/30 rounded-lg px-3 py-1.5">
                      <Wallet className="w-3 h-3 text-red-500" />
-                     <span className="text-[10px] font-bold text-red-400 uppercase">Wallet Not Connected</span>
+                     <span className="text-[10px] font-bold text-red-400 uppercase">No Wallet</span>
                   </div>
                )}
                <button
@@ -251,7 +251,7 @@ const AdminDisputes: React.FC = () => {
          </div>
 
          {/* Summary Stats */}
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+         <div className="grid grid-cols-3 gap-3 sm:gap-4">
             <div className="bg-[#0b0f19] p-4 rounded-xl border border-slate-800">
                <div className="flex items-center gap-2 mb-1">
                   <AlertTriangle className="w-4 h-4 text-red-500" />
@@ -276,7 +276,7 @@ const AdminDisputes: React.FC = () => {
          </div>
 
          {/* Filter Tabs */}
-         <div className="flex gap-2">
+         <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
             {(['all', 'open', 'resolved', 'reset'] as const).map((f) => (
                <button
                   key={f}
@@ -302,18 +302,18 @@ const AdminDisputes: React.FC = () => {
                </p>
             </div>
          ) : (
-            <div className="bg-[#0b0f19] rounded-xl border border-slate-800 overflow-hidden">
-               <table className="w-full text-left border-collapse">
+            <div className="bg-[#0b0f19] rounded-xl border border-slate-800 overflow-x-auto">
+               <table className="w-full text-left border-collapse min-w-[800px]">
                   <thead>
                      <tr className="text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-800 bg-slate-900/50">
-                        <th className="px-6 py-4">ID</th>
-                        <th className="px-6 py-4">Project</th>
-                        <th className="px-6 py-4">Milestone</th>
-                        <th className="px-6 py-4">Token</th>
-                        <th className="px-6 py-4">Reason</th>
-                        <th className="px-6 py-4">Filed</th>
-                        <th className="px-6 py-4">Status</th>
-                        <th className="px-6 py-4 text-right">Actions</th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4">ID</th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4">Project</th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4">Milestone</th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4">Token</th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4">Reason</th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4">Filed</th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4">Status</th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-right">Actions</th>
                      </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">

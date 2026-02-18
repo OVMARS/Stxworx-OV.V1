@@ -25,29 +25,29 @@ const FreelancerProfile: React.FC<FreelancerProfileProps> = ({ profile, onBack, 
   const reviews = profileReviews[profile.address] || [];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
       {/* Back Button */}
       <button
         onClick={onBack}
-        className="flex items-center text-slate-400 hover:text-white mb-6 transition-colors text-sm font-bold uppercase tracking-wider group"
+        className="flex items-center text-slate-400 hover:text-white mb-4 sm:mb-6 transition-colors text-xs sm:text-sm font-bold uppercase tracking-wider group"
       >
         <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" /> Back
       </button>
 
       {/* Header Card */}
-      <div className="bg-[#0b0f19] rounded-2xl border border-slate-800 overflow-hidden shadow-2xl relative mb-8">
+      <div className="bg-[#0b0f19] rounded-xl sm:rounded-2xl border border-slate-800 overflow-hidden shadow-2xl relative mb-6 sm:mb-8">
         {/* Cover Image */}
-        <div className="h-48 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 relative">
+        <div className="h-28 sm:h-36 md:h-48 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 relative">
           <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
           <div className="absolute top-0 right-0 p-32 bg-orange-600/10 rounded-full blur-[80px]"></div>
         </div>
 
-        <div className="px-8 pb-8 relative">
+        <div className="px-4 sm:px-6 md:px-8 pb-5 sm:pb-6 md:pb-8 relative">
           <div className="flex flex-col md:flex-row justify-between items-start">
             {/* Avatar & Info */}
-            <div className="flex flex-col md:flex-row gap-6 -mt-16 relative z-10">
-              <div className="w-32 h-32 rounded-full border-4 border-[#0b0f19] bg-slate-800 overflow-hidden shadow-xl relative">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 -mt-10 sm:-mt-12 md:-mt-16 relative z-10 w-full md:w-auto">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full border-4 border-[#0b0f19] bg-slate-800 overflow-hidden shadow-xl relative shrink-0">
                 <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
                 {profile.isIdVerified && (
                   <div className="absolute bottom-1 right-1 bg-blue-500 p-1.5 rounded-full border-2 border-[#0b0f19]" title="ID Verified">
@@ -55,9 +55,9 @@ const FreelancerProfile: React.FC<FreelancerProfileProps> = ({ profile, onBack, 
                   </div>
                 )}
               </div>
-              <div className="pt-2 md:pt-16">
-                <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-3xl font-black text-white">{profile.name}</h1>
+              <div className="pt-2 sm:pt-4 md:pt-16">
+                <div className="flex items-center gap-2 sm:gap-3 mb-1 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white">{profile.name}</h1>
                   {profile.isIdVerified && (
                     <span className="flex items-center gap-1 bg-blue-500/10 text-blue-500 border border-blue-500/20 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
                       <ShieldCheck className="w-3 h-3" /> ID Verified
@@ -103,14 +103,14 @@ const FreelancerProfile: React.FC<FreelancerProfileProps> = ({ profile, onBack, 
             </div>
 
             {/* Actions */}
-            <div className="mt-6 md:mt-6 flex gap-3 w-full md:w-auto">
+            <div className="mt-4 md:mt-6 flex gap-2 sm:gap-3 w-full md:w-auto">
               <button
                 onClick={() => onContact(profile)}
-                className="flex-1 md:flex-none px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold uppercase tracking-wider rounded border border-slate-700 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 md:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-slate-800 hover:bg-slate-700 text-white text-xs sm:text-sm font-bold uppercase tracking-wider rounded border border-slate-700 transition-colors flex items-center justify-center gap-2"
               >
                 <Mail className="w-4 h-4" /> Contact
               </button>
-              <button className="flex-1 md:flex-none px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold uppercase tracking-wider rounded border border-slate-700 transition-colors flex items-center justify-center gap-2">
+              <button className="flex-1 md:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-slate-800 hover:bg-slate-700 text-white text-xs sm:text-sm font-bold uppercase tracking-wider rounded border border-slate-700 transition-colors flex items-center justify-center gap-2">
                 <ExternalLink className="w-4 h-4" /> Explorer
               </button>
             </div>
@@ -118,36 +118,36 @@ const FreelancerProfile: React.FC<FreelancerProfileProps> = ({ profile, onBack, 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Left Column: Stats & About */}
-        <div className="lg:col-span-3 space-y-8">
+        <div className="lg:col-span-3 space-y-6 sm:space-y-8">
           {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-[#0b0f19] p-5 rounded-xl border border-slate-800 flex flex-col items-center justify-center text-center">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div className="bg-[#0b0f19] p-4 sm:p-5 rounded-xl border border-slate-800 flex flex-col items-center justify-center text-center">
               <div className="p-3 bg-orange-500/10 rounded-full mb-3">
                 <Coins className="w-6 h-6 text-orange-500" />
               </div>
-              <div className="text-2xl font-black text-white">{formatUSD(profile.totalEarnings)}</div>
+              <div className="text-xl sm:text-2xl font-black text-white">{formatUSD(profile.totalEarnings)}</div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Total Earned</div>
             </div>
-            <div className="bg-[#0b0f19] p-5 rounded-xl border border-slate-800 flex flex-col items-center justify-center text-center">
+            <div className="bg-[#0b0f19] p-4 sm:p-5 rounded-xl border border-slate-800 flex flex-col items-center justify-center text-center">
               <div className="p-3 bg-blue-500/10 rounded-full mb-3">
                 <CheckCircle className="w-6 h-6 text-blue-500" />
               </div>
-              <div className="text-2xl font-black text-white">{profile.jobsCompleted}</div>
+              <div className="text-xl sm:text-2xl font-black text-white">{profile.jobsCompleted}</div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Jobs Completed</div>
             </div>
-            <div className="bg-[#0b0f19] p-5 rounded-xl border border-slate-800 flex flex-col items-center justify-center text-center">
+            <div className="bg-[#0b0f19] p-4 sm:p-5 rounded-xl border border-slate-800 flex flex-col items-center justify-center text-center">
               <div className="p-3 bg-green-500/10 rounded-full mb-3">
                 <Star className="w-6 h-6 text-green-500 fill-green-500/20" />
               </div>
-              <div className="text-2xl font-black text-white">{profile.rating.toFixed(1)}</div>
+              <div className="text-xl sm:text-2xl font-black text-white">{profile.rating.toFixed(1)}</div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Rating</div>
             </div>
           </div>
 
           {/* About */}
-          <div className="bg-[#0b0f19] p-8 rounded-xl border border-slate-800">
+          <div className="bg-[#0b0f19] p-5 sm:p-6 md:p-8 rounded-xl border border-slate-800">
             <h3 className="text-lg font-black text-white uppercase tracking-tight mb-4 flex items-center gap-2">
               <Briefcase className="w-5 h-5 text-slate-500" /> About Me
             </h3>
@@ -182,7 +182,7 @@ const FreelancerProfile: React.FC<FreelancerProfileProps> = ({ profile, onBack, 
           )}
 
           {/* Reviews Section */}
-          <div className="bg-[#0b0f19] p-8 rounded-xl border border-slate-800">
+          <div className="bg-[#0b0f19] p-5 sm:p-6 md:p-8 rounded-xl border border-slate-800">
             <h3 className="text-lg font-black text-white uppercase tracking-tight mb-4 flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-slate-500" /> Reviews ({reviews.length})
             </h3>
