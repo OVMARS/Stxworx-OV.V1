@@ -40,12 +40,13 @@ app.use((req, res, next) => {
 // Trust first proxy (Hostinger LiteSpeed)
 app.set("trust proxy", 1);
 
-// Global rate limiting
+// Global rate limiting — applied to all write/sensitive endpoints
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: process.env.NODE_ENV === 'development' ? 1000 : 100,
+  limit: process.env.NODE_ENV === 'development' ? 1000 : 300,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.method === 'GET', // GET requests are not rate limited globally
 });
 app.use("/api", globalLimiter);
 
