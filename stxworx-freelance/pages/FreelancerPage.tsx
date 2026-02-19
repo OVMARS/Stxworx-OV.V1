@@ -20,7 +20,7 @@ const PROPOSAL_STATUS_CONFIG: Record<ProposalStatus, { label: string; color: str
 const FreelancerPage: React.FC = () => {
   const navigate = useNavigate();
   const {
-    myActiveProjects, myCompletedProjects, wallet, currentUserProfile, leaderboardData, projects,
+    myActiveProjects, wallet, currentUserProfile, leaderboardData, projects,
     freelancerDashboardTab, setFreelancerDashboardTab, isProcessing,
     handleProjectAction, applications, updateApplicationStatus,
     fetchMyProjects, fetchMyProposals, myProposals, withdrawProposal,
@@ -137,20 +137,19 @@ const FreelancerPage: React.FC = () => {
   );
 
   const tabs = [
-    { key: 'applied' as const,   label: 'Pending',     icon: <Send className="w-4 h-4" />,         count: pendingProposals.length },
-    { key: 'active' as const,    label: 'Accepted',    icon: <CheckCircle2 className="w-4 h-4" />, count: acceptedProposals.length },
-    { key: 'work' as const,      label: 'Active Work', icon: <Play className="w-4 h-4" />,         count: myActiveProjects.length },
-    { key: 'completed' as const, label: 'Completed',   icon: <CheckCircle2 className="w-4 h-4" />, count: myCompletedProjects.length },
-    { key: 'earnings' as const,  label: 'Earnings',    icon: <DollarSign className="w-4 h-4" />,   count: null },
-    { key: 'nft' as const,       label: 'NFT Badges',  icon: <Award className="w-4 h-4" />,        count: null },
+    { key: 'applied' as const,   label: 'Pending',    icon: <Send className="w-4 h-4" />,         count: pendingProposals.length },
+    { key: 'active' as const,    label: 'Accepted',   icon: <CheckCircle2 className="w-4 h-4" />, count: acceptedProposals.length },
+    { key: 'completed' as const, label: 'Rejected',   icon: <XCircle className="w-4 h-4" />,      count: rejectedProposals.length },
+    { key: 'earnings' as const,  label: 'Earnings',   icon: <DollarSign className="w-4 h-4" />,   count: null },
+    { key: 'nft' as const,       label: 'NFT Badges', icon: <Award className="w-4 h-4" />,        count: null },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+      <div className="flex flex-col gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-black text-white uppercase tracking-tight">Freelancer Portal</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">Freelancer Portal</h1>
           <div className="flex items-center gap-4 mt-2">
             {currentUserProfile && (
               <div className="flex items-center gap-2">
@@ -167,10 +166,10 @@ const FreelancerPage: React.FC = () => {
             </button>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3">
           <button
             onClick={() => navigate('/browse')}
-            className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold uppercase tracking-wider rounded-xl flex items-center gap-2 transition-all text-sm"
+            className="flex-1 sm:flex-none px-3 sm:px-5 py-2.5 sm:py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all text-xs sm:text-sm"
           >
             <Briefcase className="w-4 h-4" /> Marketplace
           </button>
@@ -179,27 +178,27 @@ const FreelancerPage: React.FC = () => {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8">
         {[
           { label: 'Pending', value: pendingProposals.length, color: 'text-blue-400', accent: 'border-blue-900/50' },
           { label: 'Accepted', value: acceptedProposals.length, color: 'text-emerald-400', accent: 'border-emerald-900/50' },
           { label: 'Active Projects', value: myActiveProjects.length, color: 'text-orange-400', accent: 'border-orange-900/50' },
           { label: 'Rejected', value: rejectedProposals.length, color: 'text-red-400', accent: 'border-red-900/50' },
         ].map((stat) => (
-          <div key={stat.label} className={`bg-[#0b0f19] rounded-xl border ${stat.accent} p-4 text-center`}>
-            <div className={`text-2xl font-black ${stat.color}`}>{stat.value}</div>
+          <div key={stat.label} className={`bg-[#0b0f19] rounded-xl border ${stat.accent} p-3 sm:p-4 text-center`}>
+            <div className={`text-xl sm:text-2xl font-black ${stat.color}`}>{stat.value}</div>
             <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mt-1">{stat.label}</div>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 overflow-x-auto border-b border-slate-800 mb-8">
+      <div className="flex gap-1 overflow-x-auto border-b border-slate-800 mb-6 sm:mb-8 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setFreelancerDashboardTab(tab.key)}
-            className={`pb-3 px-4 text-sm font-bold uppercase tracking-wider transition-all border-b-2 flex items-center gap-2 whitespace-nowrap ${
+            className={`pb-2.5 sm:pb-3 px-2.5 sm:px-4 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all border-b-2 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${
               freelancerDashboardTab === tab.key
                 ? 'text-white border-orange-500'
                 : 'text-slate-500 border-transparent hover:text-slate-300'
@@ -242,45 +241,15 @@ const FreelancerPage: React.FC = () => {
         </div>
       )}
 
-      {freelancerDashboardTab === 'work' && (
-        <div className="space-y-4">
-          {myActiveProjects.length > 0 ? (
-            myActiveProjects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                role="freelancer"
-                onAction={handleProjectAction}
-                isProcessing={isProcessing}
-              />
-            ))
-          ) : (
-            <EmptyState
-              icon={Play}
-              title="No Active Projects"
-              subtitle="Once a client funds escrow on your accepted proposal, your active projects will appear here. Submit work for each milestone to get paid."
-            />
-          )}
-        </div>
-      )}
-
       {freelancerDashboardTab === 'completed' && (
         <div className="space-y-4">
-          {myCompletedProjects.length > 0 ? (
-            myCompletedProjects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                role="freelancer"
-                onAction={handleProjectAction}
-                isProcessing={isProcessing}
-              />
-            ))
+          {rejectedProposals.length > 0 ? (
+            rejectedProposals.map((p) => renderProposalCard(p, false))
           ) : (
             <EmptyState
-              icon={CheckCircle2}
-              title="No Completed Projects"
-              subtitle="Projects will appear here once all milestones are approved and funds released."
+              icon={XCircle}
+              title="No Rejected or Withdrawn Proposals"
+              subtitle="Rejected and withdrawn proposals will appear here for your records."
             />
           )}
         </div>
@@ -288,27 +257,18 @@ const FreelancerPage: React.FC = () => {
 
       {freelancerDashboardTab === 'earnings' && (
         <div className="space-y-6">
-          <div className="bg-[#0b0f19] rounded-2xl border border-slate-800 p-8">
+          <div className="bg-[#0b0f19] rounded-2xl border border-slate-800 p-4 sm:p-6 md:p-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-xl bg-orange-600/10 flex items-center justify-center border border-orange-900/50">
                 <TrendingUp className="w-6 h-6 text-orange-500" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total Earnings</h3>
-                <div className="text-3xl font-black text-white">
-                  {currentUserProfile ? formatUSD(tokenToUsd(currentUserProfile.totalEarnings, 'STX')) : '$0.00'}
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {currentUserProfile ? `${currentUserProfile.totalEarnings.toLocaleString()} tokens earned` : '0 tokens earned'}
-                </p>
+                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Active Projects</h3>
+                <div className="text-2xl sm:text-3xl font-black text-white">{myActiveProjects.length}</div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Completed Projects</div>
-                <div className="text-xl font-black text-green-400">{myCompletedProjects.length}</div>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Active Projects</div>
                 <div className="text-xl font-black text-orange-400">{myActiveProjects.length}</div>
@@ -325,33 +285,6 @@ const FreelancerPage: React.FC = () => {
               </div>
             </div>
           </div>
-
-          {/* Completed project earnings breakdown */}
-          {myCompletedProjects.length > 0 && (
-            <div className="bg-[#0b0f19] rounded-2xl border border-slate-800 p-6">
-              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Completed Project History</h3>
-              <div className="space-y-3">
-                {myCompletedProjects.map((project) => (
-                  <div key={project.id} className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-                    <div>
-                      <div className="text-sm font-bold text-white">{project.title}</div>
-                      <div className="text-xs text-slate-500 mt-0.5">
-                        {project.milestones.length} milestones · {project.tokenType}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-black text-green-400">
-                        {formatUSD(tokenToUsd(project.totalBudget, project.tokenType))}
-                      </div>
-                      <div className="text-[10px] text-slate-600 font-mono">
-                        {project.totalBudget.toLocaleString()} {project.tokenType}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -362,7 +295,7 @@ const FreelancerPage: React.FC = () => {
           <p className="text-slate-500 text-sm max-w-md mx-auto mb-4">
             Earn on-chain achievement badges as you complete contracts and hit milestones.
           </p>
-          <div className="flex justify-center gap-4 mt-6">
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-6">
             {['First Job', '5 Contracts', '10K Earned', 'Top Rated'].map((badge) => (
               <div
                 key={badge}

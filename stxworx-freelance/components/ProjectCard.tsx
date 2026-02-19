@@ -17,29 +17,23 @@ interface ProjectCardProps {
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isProcessing }) => {
   const [expanded, setExpanded] = React.useState(true);
+  const [showDisputeModal, setShowDisputeModal] = React.useState(false);
   const [showReviewModal, setShowReviewModal] = React.useState(false);
   const { milestoneSubmissions, fetchMilestoneSubmissions, projectDisputes, fetchProjectDisputes } = useAppStore();
 
-  // Fetch milestone submissions for active projects + poll every 30s
+  // Fetch milestone submissions for active projects
   React.useEffect(() => {
     const numId = Number(project.id);
-    if (!project.isFunded || !numId) return;
-
-    // Initial fetch
-    fetchMilestoneSubmissions(numId);
-    fetchProjectDisputes(numId);
-
-    // Poll every 30 seconds so the client sees updates when freelancer submits
-    const interval = setInterval(() => {
+    if (project.isFunded && numId) {
       fetchMilestoneSubmissions(numId);
       fetchProjectDisputes(numId);
-    }, 30_000);
-
-    return () => clearInterval(interval);
+    }
   }, [project.id, project.isFunded]);
 
   const submissions = milestoneSubmissions[Number(project.id)] || [];
   const disputes = projectDisputes[Number(project.id)] || [];
+  const hasOpenDispute = disputes.some(d => d.status === 'open');
+  const isActive = project.status === 'active';
   const isCompleted = project.status === 'completed';
 
   // Enrich milestone statuses from backend submissions
@@ -67,10 +61,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
       {/* Decorative glow */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-orange-600/5 rounded-full blur-[50px] -mr-16 -mt-16 group-hover:bg-orange-600/10 transition-all"></div>
 
-      <div className="p-6 relative z-10">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
+      <div className="p-4 sm:p-5 md:p-6 relative z-10">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 sm:mb-6 gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3 flex-wrap">
               <span className="px-2.5 py-1 rounded text-[10px] uppercase font-bold tracking-wider bg-slate-800 text-slate-300 border border-slate-700">
                 {project.category}
               </span>
@@ -85,10 +79,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
                 </span>
               )}
             </div>
-            <h3 className="text-xl font-black text-white uppercase tracking-tight font-display">{project.title}</h3>
+            <h3 className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-tight font-display">{project.title}</h3>
           </div>
-          <div className="text-right">
-            <div className="text-2xl font-black text-white">
+          <div className="text-left sm:text-right shrink-0">
+            <div className="text-xl sm:text-2xl font-black text-white">
               {formatUSD(usdValue)}
             </div>
             <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold mt-1 font-mono">
@@ -97,11 +91,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
           </div>
         </div>
 
-        <p className="text-slate-400 text-sm mb-6 leading-relaxed border-l-2 border-slate-800 pl-4">
+        <p className="text-slate-400 text-xs sm:text-sm mb-4 sm:mb-6 leading-relaxed border-l-2 border-slate-800 pl-3 sm:pl-4">
           {project.description}
         </p>
 
-        <div className="flex items-center justify-between text-xs font-mono text-slate-500 mb-6 bg-slate-900/50 p-3 rounded-lg border border-slate-800/50">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono text-slate-500 mb-4 sm:mb-6 bg-slate-900/50 p-2.5 sm:p-3 rounded-lg border border-slate-800/50">
           <div className="flex items-center gap-2">
             <User className="h-3 w-3 text-orange-500" />
             <span className="truncate max-w-[150px]">{role === 'client' ? `Freelancer: ${project.freelancerAddress}` : `Client: ${project.clientAddress}`}</span>
@@ -134,8 +128,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
         </div>
       </div>
 
-      <div className="bg-[#05080f] border-t border-slate-800 px-6 py-4">
-        <div className="flex justify-between items-center">
+      <div className="bg-[#05080f] border-t border-slate-800 px-4 sm:px-5 md:px-6 py-3 sm:py-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <button
             onClick={() => setExpanded(!expanded)}
             className="text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-orange-500 flex items-center gap-1 transition-colors"
@@ -143,6 +137,31 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
             {expanded ? 'Hide 4-Stage Escrow' : 'View Escrow Details'}
             <ArrowUpRight className={`h-3 w-3 transition-transform ${expanded ? 'rotate-45' : ''}`} />
           </button>
+
+          {role === 'client' && !project.isFunded && (
+            <button
+              onClick={() => onAction(project.id, 'fund')}
+              disabled={isProcessing}
+              className="w-full sm:w-auto px-4 sm:px-5 py-2 bg-orange-600 text-white text-xs font-black uppercase tracking-wider rounded hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_15px_rgba(234,88,12,0.3)]"
+            >
+              {isProcessing ? 'Confirming...' : 'Lock Funds (Escrow)'}
+            </button>
+          )}
+
+          {/* Dispute button — available on active projects */}
+          {isActive && !hasOpenDispute && (
+            <button
+              onClick={() => setShowDisputeModal(true)}
+              className="px-4 py-2 bg-red-950/40 text-red-400 text-xs font-bold uppercase tracking-wider rounded hover:bg-red-600 hover:text-white border border-red-900/30 transition-all flex items-center gap-1"
+            >
+              <AlertTriangle className="w-3 h-3" /> Dispute
+            </button>
+          )}
+          {hasOpenDispute && (
+            <span className="px-4 py-2 text-red-400 text-xs font-bold uppercase tracking-wider bg-red-950/20 border border-red-900/30 rounded flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" /> Dispute Open
+            </span>
+          )}
 
           {/* Review button — available on completed projects */}
           {isCompleted && (
@@ -153,11 +172,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
               <Star className="w-3 h-3" /> Leave Review
             </button>
           )}
-
         </div>
 
         {expanded && (
-          <div className="mt-5 space-y-3 relative">
+          <div className="mt-4 sm:mt-5 space-y-2 sm:space-y-3 relative">
             {/* Connector Line */}
             <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-800 -z-10"></div>
 
@@ -171,12 +189,21 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
                 onAction={onAction}
                 isProcessing={isProcessing}
                 submissions={submissions.filter(s => s.milestoneNum === index + 1)}
-                disputes={disputes.filter(d => d.milestoneNum === index + 1)}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Dispute Modal */}
+      {showDisputeModal && (
+        <DisputeModal
+          projectId={Number(project.id)}
+          projectTitle={project.title}
+          milestoneCount={project.milestones.length}
+          onClose={() => setShowDisputeModal(false)}
+        />
+      )}
 
       {/* Review Modal */}
       {showReviewModal && (
@@ -201,272 +228,87 @@ const MilestoneItem: React.FC<{
   onAction: (projectId: string, actionType: string, payload?: any) => void;
   isProcessing?: boolean;
   submissions: BackendMilestoneSubmission[];
-  disputes: import('../lib/api').BackendDispute[];
-}> = ({ index, milestone, project, role, onAction, isProcessing, submissions, disputes }) => {
+}> = ({ index, milestone, project, role, onAction, isProcessing, submissions }) => {
   const [submissionLink, setSubmissionLink] = React.useState('');
-  const [txPending, setTxPending] = React.useState(false);
-  const [showMilestoneDispute, setShowMilestoneDispute] = React.useState(false);
 
   // Get the latest submission for this milestone
   const latestSubmission = submissions.length > 0
     ? submissions.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())[0]
     : null;
 
-  // Check if THIS specific milestone has an open dispute
-  const hasDisputeOnThisMilestone = disputes.some(d => d.status === 'open');
-
-  // Check if the milestone was already completed on-chain (any previous submission exists)
-  const wasAlreadyCompletedOnChain = submissions.length > 0;
-
-  const milestoneNum = milestone.id; // 1-based, matches contract
-  const onChainProjectId = project.onChainId; // null until escrow funded
-
-  // Status convenience flags
-  const isApproved = milestone.status === 'approved';
-  const isRefunded = milestone.status === 'refunded';
-  const isSubmitted = milestone.status === 'submitted';
-  const isPending = milestone.status === 'pending';
-  const isDisputed = hasDisputeOnThisMilestone;
-  const isFunded = project.isFunded;
-
-  // Can file dispute: milestone is active, funded, and no existing open dispute
-  const canFileDispute = isFunded && !isApproved && !isRefunded && !isDisputed && (isPending || isSubmitted);
-
-  // ── ON-CHAIN: Freelancer Complete Milestone ──
-  const handleCompleteMilestone = async () => {
+  const handleFreelancerSubmit = () => {
     if (!submissionLink) return;
-    if (!onChainProjectId) {
-      alert('Escrow not yet deployed on-chain. Cannot submit milestone.');
-      return;
-    }
-    if (isDisputed) {
-      alert('This milestone has an active dispute. You cannot submit work until it is resolved.');
-      return;
-    }
-    setTxPending(true);
-
-    // Helper: save the submission to the backend (called after contract TX or skip)
-    const normalizedLink = submissionLink.match(/^https?:\/\//) ? submissionLink : `https://${submissionLink}`;
-    const saveToBackend = (txId: string) => {
-      onAction(project.id, 'submit_milestone', {
-        milestoneId: milestone.id,
-        link: normalizedLink,
-        completionTxId: txId,
-      });
-    };
-
-    try {
-      if (wasAlreadyCompletedOnChain) {
-        // Milestone already marked complete on-chain (e.g. after a rejection, or previous
-        // contract sign that didn't persist to backend). Skip contract call.
-        const prevTxId = submissions.find(s => s.completionTxId)?.completionTxId || 'resubmission';
-        saveToBackend(prevTxId);
-        setTxPending(false);
-      } else {
-        // First-time completion: call the smart contract
-        const { completeMilestoneContractCall } = await import('../lib/contracts');
-        await completeMilestoneContractCall(
-          onChainProjectId,
-          milestoneNum,
-          (txData) => {
-            console.log('complete-milestone TX sent:', txData.txId);
-            saveToBackend(txData.txId);
-            setTxPending(false);
-          },
-          () => {
-            console.log('complete-milestone TX cancelled');
-            setTxPending(false);
-          }
-        );
-      }
-    } catch (err: any) {
-      console.error('complete-milestone failed:', err);
-      // If the contract rejects with ERR-ALREADY-COMPLETE (u116), the milestone
-      // was already completed on-chain in a previous session but the backend save
-      // failed. Recover gracefully by saving to backend now.
-      const errMsg = String(err?.message || '');
-      if (errMsg.includes('u116') || errMsg.includes('ALREADY-COMPLETE') || errMsg.includes('already complete')) {
-        console.warn('Milestone already complete on-chain — saving to backend as recovery.');
-        saveToBackend('recovery-already-complete');
-        setTxPending(false);
-      } else {
-        alert(`Milestone submission failed: ${err.message || 'Transaction was rejected by the contract. Please try again.'}`);
-        setTxPending(false);
-      }
-    }
-  };
-
-  // ── ON-CHAIN: Client Release Milestone Funds ──
-  const handleReleaseMilestone = async () => {
-    if (!latestSubmission) return;
-    if (!onChainProjectId) {
-      alert('Escrow not yet deployed on-chain. Cannot release funds.');
-      return;
-    }
-    setTxPending(true);
-    try {
-      const { releaseMilestoneContractCall } = await import('../lib/contracts');
-      await releaseMilestoneContractCall(
-        onChainProjectId,
-        milestoneNum,
-        project.tokenType as 'STX' | 'sBTC',
-        (txData) => {
-          console.log('release-milestone TX sent:', txData.txId);
-          onAction(project.id, 'approve_milestone', {
-            submissionId: latestSubmission.id,
-            milestoneId: milestone.id,
-            releaseTxId: txData.txId,
-          });
-          setTxPending(false);
-        },
-        () => {
-          console.log('release-milestone TX cancelled');
-          setTxPending(false);
-        }
-      );
-    } catch (err: any) {
-      console.error('release-milestone failed:', err);
-      alert(`Release failed: ${err.message || 'Transaction was rejected. Please try again.'}`);
-      setTxPending(false);
-    }
+    onAction(project.id, 'submit_milestone', { milestoneId: milestone.id, link: submissionLink });
   };
 
   const getStatusColor = () => {
-    if (isApproved) return 'bg-green-500 border-green-500 text-white';
-    if (isRefunded) return 'bg-red-500 border-red-500 text-white';
-    if (isDisputed) return 'bg-red-500 border-red-500 text-white';
-    if (isSubmitted) return 'bg-blue-600 border-blue-600 text-white';
-    if (isPending && isFunded) return 'bg-[#0b0f19] border-orange-500/50 text-orange-500';
+    if (milestone.status === 'approved') return 'bg-orange-500 border-orange-500 text-white';
+    if (milestone.status === 'refunded') return 'bg-red-500 border-red-500 text-white';
+    if (milestone.status === 'submitted') return 'bg-blue-600 border-blue-600 text-white';
+    if (milestone.status === 'pending') return 'bg-[#0b0f19] border-orange-500/50 text-orange-500';
     return 'bg-[#0b0f19] border-slate-700 text-slate-600';
   };
 
   return (
-    <div className={`p-4 rounded-lg border transition-all relative ${
-      isApproved ? 'bg-green-950/10 border-green-500/30' :
-      isRefunded ? 'bg-[#0b0f19] border-red-500/20' :
-      isDisputed ? 'bg-red-950/10 border-red-500/30' :
-      isPending && isFunded ? 'bg-[#0b0f19] border-slate-700' :
-      'bg-[#0b0f19] border-slate-800 opacity-80'
-    }`}>
-      <div className="flex items-start gap-4">
-        {/* Status Badge — Checkmark for completed milestones */}
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 shrink-0 z-10 ${getStatusColor()}`}>
-          {isApproved ? (
-            <CheckCircle2 className="w-4 h-4" />
-          ) : (
-            <span className="text-xs font-bold font-mono">M{index + 1}</span>
-          )}
+    <div className={`p-3 sm:p-4 rounded border transition-colors relative ${milestone.status === 'approved' ? 'bg-[#0b0f19] border-orange-500/20' :
+        milestone.status === 'refunded' ? 'bg-[#0b0f19] border-red-500/20' :
+          milestone.status === 'pending' && project.isFunded ? 'bg-[#0b0f19] border-slate-700' :
+            'bg-[#0b0f19] border-slate-800 opacity-80'
+      }`}>
+      <div className="flex items-start gap-2.5 sm:gap-4">
+        {/* Status Badge Indicator */}
+        <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border-2 shrink-0 z-10 ${getStatusColor()}`}>
+          <span className="text-[10px] sm:text-xs font-bold font-mono">M{index + 1}</span>
         </div>
 
         <div className="flex-1">
           <div className="flex justify-between items-center mb-1">
-            <div className="flex items-center gap-2">
-              <h4 className="font-bold text-sm text-slate-200 uppercase tracking-wide">
-                {milestone.title}
-              </h4>
-              {/* ✅ Prominent checkmark badge for completed milestones */}
-              {isApproved && (
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/15 border border-green-500/30">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
-                  <span className="text-[10px] font-bold text-green-400 uppercase tracking-wider">Completed</span>
-                </span>
-              )}
-            </div>
-            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${
-              isApproved ? 'text-green-500 bg-green-500/10' :
-              isRefunded ? 'text-red-500 bg-red-500/10' :
-              isDisputed ? 'text-red-400 bg-red-500/10' :
-              isSubmitted ? 'text-blue-400 bg-blue-500/10' :
-              isPending ? 'text-orange-400 bg-orange-500/10' :
-              'text-slate-500'
-            }`}>
-              {isDisputed ? 'disputed' : milestone.status}
+            <h4 className="font-bold text-sm text-slate-200 uppercase tracking-wide">
+              {milestone.title}
+            </h4>
+            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${milestone.status === 'approved' ? 'text-green-500 bg-green-500/10' :
+                milestone.status === 'refunded' ? 'text-red-500 bg-red-500/10' :
+                  milestone.status === 'submitted' ? 'text-blue-400 bg-blue-500/10' :
+                    milestone.status === 'pending' ? 'text-orange-400 bg-orange-500/10' :
+                      'text-slate-500'
+              }`}>
+              {milestone.status}
             </span>
           </div>
 
           <div className="flex justify-between items-center text-xs font-mono text-slate-500 mb-3">
-            {isRefunded ? (
-              <span>Refunded to Client: <span className="text-red-400 font-bold">{milestone.amount.toFixed(4)} {project.tokenType}</span></span>
+            {milestone.status === 'refunded' ? (
+              <span>Refunded to Client: <span className="text-red-400 font-bold strike-through">{milestone.amount.toFixed(4)} {project.tokenType}</span></span>
             ) : (
               <span>Release: <span className="text-slate-300 font-bold">{milestone.amount.toFixed(4)} {project.tokenType}</span></span>
             )}
 
-            {isApproved && (
-              <span className="text-green-400 flex items-center gap-1 font-bold">
-                <CheckCircle2 className="w-3 h-3" /> Released on-chain
-              </span>
+            {milestone.status === 'approved' && (
+              <span className="text-orange-500/80">Fee: {(milestone.amount * 0.10).toFixed(4)} {project.tokenType}</span>
             )}
           </div>
 
-          {/* ══════════════ ON-CHAIN ACTION BUTTONS ══════════════ */}
-
-          {/* ── FREELANCER: Dispute active warning ── */}
-          {role === 'freelancer' && isPending && isFunded && isDisputed && (
-            <div className="mt-2 text-[10px] text-red-500 font-bold font-mono border-t border-red-900/30 pt-2 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" /> Dispute active on this milestone — submission blocked until resolved.
+          {/* Action Area based on Role and Status */}
+          {role === 'freelancer' && milestone.status === 'pending' && project.isFunded && (
+            <div className="mt-3 flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                placeholder="Proof of Work Link (Github/Figma)"
+                className="flex-1 px-3 py-2 text-xs bg-[#05080f] border border-slate-700 text-white rounded focus:ring-1 focus:ring-orange-500 focus:outline-none placeholder-slate-600 font-mono min-w-0"
+                value={submissionLink}
+                onChange={(e) => setSubmissionLink(e.target.value)}
+              />
+              <button
+                onClick={handleFreelancerSubmit}
+                disabled={!submissionLink || isProcessing}
+                className="w-full sm:w-auto px-3 py-2 bg-blue-600 text-white text-xs font-bold uppercase tracking-wider rounded hover:bg-blue-500 disabled:opacity-50"
+              >
+                Submit Work
+              </button>
             </div>
           )}
 
-          {/* ── FREELANCER: Complete Milestone + File Dispute (pending + funded) ── */}
-          {role === 'freelancer' && isPending && isFunded && !isDisputed && (
-            <div className="mt-3">
-              {wasAlreadyCompletedOnChain && (
-                <p className="text-[10px] text-yellow-500 font-mono mb-2 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> Previous submission was rejected — resubmit your updated deliverable below.
-                </p>
-              )}
-              <div className="flex gap-2 mb-2">
-                <input
-                  type="text"
-                  placeholder="Proof of Work Link (Github/Figma)"
-                  className="flex-1 px-3 py-2 text-xs bg-[#05080f] border border-slate-700 text-white rounded focus:ring-1 focus:ring-orange-500 focus:outline-none placeholder-slate-600 font-mono"
-                  value={submissionLink}
-                  onChange={(e) => setSubmissionLink(e.target.value)}
-                />
-              </div>
-              <div className="flex gap-2">
-                {/* 🔗 ON-CHAIN: Complete Milestone */}
-                <button
-                  onClick={handleCompleteMilestone}
-                  disabled={!submissionLink || isProcessing || txPending}
-                  className="flex-1 px-3 py-2 bg-blue-600 text-white text-xs font-bold uppercase tracking-wider rounded hover:bg-blue-500 disabled:opacity-50 flex items-center justify-center gap-1.5 transition-all"
-                >
-                  <Shield className="w-3 h-3" />
-                  {txPending ? 'Signing TX...' : wasAlreadyCompletedOnChain ? 'Resubmit Work' : 'Complete Milestone'}
-                </button>
-                {/* 🔗 ON-CHAIN: File Dispute */}
-                {canFileDispute && (
-                  <button
-                    onClick={() => setShowMilestoneDispute(true)}
-                    disabled={txPending}
-                    className="px-3 py-2 bg-red-950/40 text-red-400 text-xs font-bold uppercase tracking-wider rounded hover:bg-red-600 hover:text-white border border-red-900/30 transition-all flex items-center gap-1.5"
-                  >
-                    <Shield className="w-3 h-3" /> File Dispute
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ── FREELANCER: Submitted — waiting for client, can dispute ── */}
-          {role === 'freelancer' && isSubmitted && !isDisputed && (
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-[10px] text-blue-400 font-bold font-mono flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Awaiting client review...
-              </span>
-              {canFileDispute && (
-                <button
-                  onClick={() => setShowMilestoneDispute(true)}
-                  className="px-3 py-2 bg-red-950/40 text-red-400 text-xs font-bold uppercase tracking-wider rounded hover:bg-red-600 hover:text-white border border-red-900/30 transition-all flex items-center gap-1.5"
-                >
-                  <Shield className="w-3 h-3" /> File Dispute
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* ── CLIENT: Release + Reject + File Dispute (submitted) ── */}
-          {role === 'client' && isSubmitted && latestSubmission && (
+          {role === 'client' && milestone.status === 'submitted' && latestSubmission && (
             <div className="mt-3 bg-[#05080f] p-3 rounded border border-slate-700/50">
               <p className="text-xs text-slate-400 mb-2 font-mono">
                 <span className="font-bold text-slate-300">Deliverable:</span>
@@ -479,101 +321,36 @@ const MilestoneItem: React.FC<{
                   <span className="font-bold text-slate-400">Note:</span> {latestSubmission.description}
                 </p>
               )}
-              <div className="flex gap-2">
-                {/* 🔗 ON-CHAIN: Release Funds */}
+              <div className="flex flex-col sm:flex-row gap-2">
                 <button
-                  onClick={handleReleaseMilestone}
-                  disabled={isProcessing || txPending}
-                  className="flex-1 px-3 py-2 bg-green-600 text-white text-xs font-bold uppercase tracking-wider rounded hover:bg-green-500 disabled:opacity-50 flex items-center justify-center gap-1.5 transition-all"
+                  onClick={() => onAction(project.id, 'approve_milestone', { submissionId: latestSubmission.id, milestoneId: milestone.id, releaseTxId: 'pending' })}
+                  disabled={isProcessing}
+                  className="flex-1 px-3 py-2 bg-green-600 text-white text-xs font-bold uppercase tracking-wider rounded hover:bg-green-500 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  <Shield className="w-3 h-3" />
-                  {txPending ? 'Signing TX...' : isProcessing ? 'Verifying...' : 'Release'}
+                  {isProcessing ? 'Verifying...' : 'Approve & Release'}
                 </button>
-                {/* OFF-CHAIN: Reject */}
                 <button
                   onClick={() => onAction(project.id, 'reject_milestone', { submissionId: latestSubmission.id, milestoneId: milestone.id })}
-                  disabled={isProcessing || txPending}
-                  className="px-3 py-2 bg-slate-800 text-slate-300 text-xs font-bold uppercase tracking-wider rounded hover:bg-slate-700 disabled:opacity-50 transition-all"
+                  disabled={isProcessing}
+                  className="px-3 py-2 bg-red-600/80 text-white text-xs font-bold uppercase tracking-wider rounded hover:bg-red-500 disabled:opacity-50"
                 >
                   Reject
                 </button>
-                {/* 🔗 ON-CHAIN: File Dispute */}
-                {canFileDispute && (
-                  <button
-                    onClick={() => setShowMilestoneDispute(true)}
-                    disabled={txPending}
-                    className="px-3 py-2 bg-red-950/40 text-red-400 text-xs font-bold uppercase tracking-wider rounded hover:bg-red-600 hover:text-white border border-red-900/30 transition-all flex items-center gap-1.5"
-                  >
-                    <Shield className="w-3 h-3" /> File Dispute
-                  </button>
-                )}
               </div>
             </div>
           )}
 
-          {/* ── CLIENT: Pending + funded — awaiting freelancer, can dispute ── */}
-          {role === 'client' && isPending && isFunded && !isDisputed && (
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-[10px] text-orange-400 font-bold font-mono flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Awaiting freelancer submission...
-              </span>
-              {canFileDispute && (
-                <button
-                  onClick={() => setShowMilestoneDispute(true)}
-                  className="px-3 py-2 bg-red-950/40 text-red-400 text-xs font-bold uppercase tracking-wider rounded hover:bg-red-600 hover:text-white border border-red-900/30 transition-all flex items-center gap-1.5"
-                >
-                  <Shield className="w-3 h-3" /> File Dispute
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* ── Dispute active banner (non-pending states) ── */}
-          {isDisputed && !isPending && (
-            <div className="mt-2 text-[10px] text-red-400 font-bold font-mono border-t border-red-900/30 pt-2 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" /> Dispute active — awaiting admin resolution.
-            </div>
-          )}
-
-          {/* ── CLIENT: Dispute on pending milestone ── */}
-          {role === 'client' && isPending && isFunded && isDisputed && (
-            <div className="mt-2 text-[10px] text-red-400 font-bold font-mono border-t border-red-900/30 pt-2 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" /> Dispute filed — awaiting admin resolution.
-            </div>
-          )}
-
-          {/* ✅ On-chain finalized banner for completed milestones */}
-          {isApproved && (
-            <div className="mt-2 text-[10px] text-green-400 font-bold font-mono border-t border-green-900/30 pt-2 flex items-center gap-1">
-              <Shield className="w-3 h-3" /> On-chain transaction finalized — funds released immutably.
-            </div>
-          )}
-
-          {/* ── Refunded banner ── */}
-          {isRefunded && (
+          {milestone.status === 'refunded' && (
             <div className="mt-2 text-[10px] text-red-500 font-bold font-mono border-t border-red-900/30 pt-2 flex items-center gap-1">
               <AlertCircle className="w-3 h-3" /> Admin Intervention: Funds refunded to client.
             </div>
           )}
 
-          {/* ── Not funded warning ── */}
-          {!isFunded && milestone.status !== 'locked' && (
+          {!project.isFunded && milestone.status !== 'locked' && (
             <p className="text-[10px] text-red-500 font-mono mt-1">* Waiting for escrow funding</p>
           )}
         </div>
       </div>
-
-      {/* Per-milestone Dispute Modal (on-chain) */}
-      {showMilestoneDispute && (
-        <DisputeModal
-          projectId={Number(project.id)}
-          projectTitle={project.title}
-          milestoneCount={project.milestones.length}
-          onChainId={project.onChainId}
-          fixedMilestoneNum={milestoneNum}
-          onClose={() => setShowMilestoneDispute(false)}
-        />
-      )}
     </div>
   );
 };

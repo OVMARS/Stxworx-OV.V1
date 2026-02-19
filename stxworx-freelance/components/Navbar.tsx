@@ -19,7 +19,7 @@ import {
 
 import { WalletState, ViewType, UserRole } from '../types';
 import { useAppStore } from '../stores/useAppStore';
-import STXWORXLogo from '../assets/STXWORX_LOGO_FINAL_3d_cropped.png'; 
+import STXWORXLogo from '../../assets/STXWORX_LOGO_FINAL_3d_cropped.png';
 
 interface NavbarProps {
   wallet: WalletState;

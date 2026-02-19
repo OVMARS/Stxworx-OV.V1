@@ -51,22 +51,22 @@ const BrowsePage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col gap-4 mb-6 sm:mb-8">
         <div>
-          <h2 className="text-3xl font-black text-white uppercase tracking-tight">Marketplace</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">Marketplace</h2>
           <p className="text-slate-400 text-sm mt-1">Found {openProjects.length} open contracts</p>
         </div>
-        <div className="flex items-center gap-4 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
           {userRole === 'client' && wallet.isConnected && (
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-5 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-orange-900/20 flex items-center gap-2 transition-all hover:scale-105 text-xs whitespace-nowrap shrink-0"
+              className="w-full sm:w-auto px-5 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2 transition-all hover:scale-105 text-xs whitespace-nowrap shrink-0"
             >
               <PlusCircle className="w-4 h-4" /> New Contract
             </button>
           )}
-          <div className="flex bg-[#0b0f19] p-1 rounded-lg border border-slate-800">
+          <div className="flex bg-[#0b0f19] p-1 rounded-lg border border-slate-800 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
@@ -85,15 +85,14 @@ const BrowsePage: React.FC = () => {
       </div>
 
       {openProjects.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           {openProjects.map((project) => {
             const applied = hasAppliedToProject(project.id);
             const usdValue = tokenToUsd(project.totalBudget, project.tokenType);
             return (
               <div
                 key={project.id}
-                onClick={() => navigate(`/project/${project.id}`)}
-                className="bg-[#0b0f19] rounded-xl border border-slate-800 hover:border-orange-500/50 transition-all duration-300 p-6 group relative overflow-hidden cursor-pointer"
+                className="bg-[#0b0f19] rounded-xl border border-slate-800 hover:border-orange-500/50 transition-all duration-300 p-4 sm:p-5 md:p-6 group relative overflow-hidden"
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-orange-600/5 rounded-full blur-[50px] -mr-16 -mt-16 group-hover:bg-orange-600/10 transition-all" />
                 <div className="relative z-10">
@@ -118,7 +117,7 @@ const BrowsePage: React.FC = () => {
                     {project.description}
                   </p>
 
-                  <div className="flex items-center gap-6 text-xs text-slate-500 mb-5">
+                  <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-1 text-xs text-slate-500 mb-4 sm:mb-5">
                     <span className="flex items-center gap-1">
                       <DollarSign className="w-3.5 h-3.5 text-orange-500" />
                       <span className="font-bold text-white">{formatUSD(usdValue)}</span>
@@ -139,7 +138,7 @@ const BrowsePage: React.FC = () => {
 
                   {userRole === 'freelancer' && wallet.isConnected && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleApplyClick(project); }}
+                      onClick={() => handleApplyClick(project)}
                       disabled={applied}
                       className={`w-full py-3 rounded-xl text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
                         applied
