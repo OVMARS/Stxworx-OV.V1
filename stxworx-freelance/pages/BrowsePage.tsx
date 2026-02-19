@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
-import { Briefcase, Clock, DollarSign, Send, CheckCircle2, X, PlusCircle } from 'lucide-react';
+import { Briefcase, Clock, DollarSign, Send, CheckCircle2, X, PlusCircle, User } from 'lucide-react';
 import { formatUSD, tokenToUsd } from '../services/StacksService';
 import { Project } from '../types';
 
@@ -66,20 +66,22 @@ const BrowsePage: React.FC = () => {
               <PlusCircle className="w-4 h-4" /> New Contract
             </button>
           )}
-          <div className="flex bg-[#0b0f19] p-1 rounded-lg border border-slate-800 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap transition-all ${
-                  selectedCategory === cat
-                    ? 'bg-orange-600 text-white shadow-lg'
-                    : 'text-slate-500 hover:text-slate-300'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+          <div className="overflow-hidden w-full">
+            <div className="flex bg-[#0b0f19] p-1 rounded-lg border border-slate-800 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap transition-all ${
+                    selectedCategory === cat
+                      ? 'bg-orange-600 text-white shadow-lg'
+                      : 'text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -127,6 +129,15 @@ const BrowsePage: React.FC = () => {
                       <Clock className="w-3.5 h-3.5" />
                       {new Date(project.createdAt).toLocaleDateString()}
                     </span>
+                    {project.clientAddress && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/user/${project.clientAddress}`); }}
+                        className="flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
+                      >
+                        <User className="w-3.5 h-3.5" />
+                        <span className="font-bold">Client</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Milestone preview */}

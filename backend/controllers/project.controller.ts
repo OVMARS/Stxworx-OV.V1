@@ -2,6 +2,9 @@ import { type Request, type Response } from "express";
 import { z } from "zod";
 import { projectService } from "../services/project.service";
 import { insertProjectSchema } from "@shared/schema";
+import { db } from "../db";
+import { users } from "@shared/schema";
+import { eq, inArray } from "drizzle-orm";
 
 const activateSchema = z.object({
   escrowTxId: z.string().min(1),
@@ -9,6 +12,27 @@ const activateSchema = z.object({
 });
 
 export const projectController = {
+  /** Resolve clientAddress/freelancerAddress by joining user IDs */
+  async _enrichWithAddresses(projects: any[]) {
+    const userIds = new Set<number>();
+    for (const p of projects) {
+      if (p.clientId) userIds.add(p.clientId);
+      if (p.freelancerId) userIds.add(p.freelancerId);
+    }
+    if (userIds.size === 0) return projects;
+    const rows = await db
+      .select({ id: users.id, stxAddress: users.stxAddress })
+      .from(users)
+      .where(inArray(users.id, Array.from(userIds)));
+    const idToAddr: Record<number, string> = {};
+    for (const r of rows) idToAddr[r.id] = r.stxAddress;
+    return projects.map((p) => ({
+      ...p,
+      clientAddress: idToAddr[p.clientId] || '',
+      freelancerAddress: p.freelancerId ? idToAddr[p.freelancerId] || '' : '',
+    }));
+  },
+
   // POST /api/projects
   async create(req: Request, res: Response) {
     try {
@@ -42,7 +66,8 @@ export const projectController = {
         budget: projectService.computeBudget(p),
       }));
 
-      return res.status(200).json(withBudget);
+      const enriched = await projectController._enrichWithAddresses(withBudget);
+      return res.status(200).json(enriched);
     } catch (error) {
       console.error("Get projects error:", error);
       return res.status(500).json({ message: "Internal server error" });
@@ -63,6 +88,7 @@ export const projectController = {
       return res.status(200).json({
         ...project,
         budget: projectService.computeBudget(project),
+        ...(await projectController._enrichWithAddresses([project]))[0],
       });
     } catch (error) {
       console.error("Get project error:", error);

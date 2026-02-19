@@ -119,6 +119,15 @@ const BrowseProjectDetailPage: React.FC = () => {
               <Clock className="w-4 h-4 text-slate-600" />
               <span className="text-xs">{new Date(project.createdAt).toLocaleDateString()}</span>
             </div>
+            {project.clientAddress && (
+              <button
+                onClick={() => navigate(`/user/${project.clientAddress}`)}
+                className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg text-blue-400 hover:text-blue-300 hover:border-blue-500/40 transition-all"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span className="text-xs font-bold">View Client Profile</span>
+              </button>
+            )}
           </div>
 
           {/* Milestone Breakdown */}

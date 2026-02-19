@@ -38,9 +38,9 @@ const FreelancerProfile: React.FC<FreelancerProfileProps> = ({ profile, onBack, 
       {/* Header Card */}
       <div className="bg-[#0b0f19] rounded-xl sm:rounded-2xl border border-slate-800 overflow-hidden shadow-2xl relative mb-6 sm:mb-8">
         {/* Cover Image */}
-        <div className="h-28 sm:h-36 md:h-48 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 relative">
+        <div className="h-28 sm:h-36 md:h-48 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
           <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-          <div className="absolute top-0 right-0 p-32 bg-orange-600/10 rounded-full blur-[80px]"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 sm:w-auto sm:p-32 bg-orange-600/10 rounded-full blur-[80px]"></div>
         </div>
 
         <div className="px-4 sm:px-6 md:px-8 pb-5 sm:pb-6 md:pb-8 relative">

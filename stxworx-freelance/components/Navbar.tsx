@@ -96,7 +96,7 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   const NotificationDropdown = () => (
-    <div className="absolute right-0 sm:right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-80 md:w-96 max-w-[24rem] bg-[#0b0f19] border border-slate-800 rounded-xl shadow-2xl shadow-black/40 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+    <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-80 md:w-96 max-w-[24rem] bg-[#0b0f19] border border-slate-800 rounded-xl shadow-2xl shadow-black/40 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200" style={{ maxWidth: 'min(24rem, calc(100vw - 1rem))' }}>
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
         <h3 className="text-sm font-bold text-white uppercase tracking-wider">Notifications</h3>
         <div className="flex items-center gap-3">
@@ -401,7 +401,7 @@ const Navbar: React.FC<NavbarProps> = ({
               )}
 
               <span className={`text-[9px] font-bold uppercase tracking-wider mt-1 ${wallet.isConnected ? 'text-green-400' : 'text-orange-500'}`}>
-                {wallet.isConnected ? `\( {wallet.address?.slice(0,3)}... \){wallet.address?.slice(-2)}` : 'Connect'}
+                {wallet.isConnected ? `${wallet.address?.slice(0, 3)}...${wallet.address?.slice(-2)}` : 'Connect'}
               </span>
             </div>
 

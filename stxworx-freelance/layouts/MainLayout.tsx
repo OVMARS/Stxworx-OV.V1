@@ -119,7 +119,7 @@ const MainLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 font-sans selection:bg-orange-500/30">
+    <div className="min-h-screen bg-[#020617] text-slate-200 font-sans selection:bg-orange-500/30 overflow-x-hidden w-full">
       <Navbar
         wallet={wallet}
         userRole={userRole}

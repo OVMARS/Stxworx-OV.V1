@@ -142,7 +142,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ externalContact, onCloseExterna
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-orange-600 rounded-full shadow-[0_0_20px_rgba(234,88,12,0.4)] flex items-center justify-center text-white hover:bg-orange-500 hover:scale-110 transition-all z-50 group"
+        className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 w-14 h-14 bg-orange-600 rounded-full shadow-[0_0_20px_rgba(234,88,12,0.4)] flex items-center justify-center text-white hover:bg-orange-500 hover:scale-110 transition-all z-50 group"
       >
         <MessageCircle className="w-7 h-7" />
         <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center animate-bounce">2</span>
@@ -152,7 +152,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ externalContact, onCloseExterna
 
   return (
     <div
-      className={`fixed bottom-6 right-6 bg-[#0b0f19] border border-slate-700 rounded-2xl shadow-2xl transition-all duration-300 z-50 overflow-hidden flex flex-col font-sans ${isMinimized ? 'w-80 h-16' : 'w-[400px] h-[650px] max-h-[85vh] max-w-[90vw]'
+      className={`fixed bottom-6 right-4 sm:right-6 bg-[#0b0f19] border border-slate-700 rounded-2xl shadow-2xl transition-all duration-300 z-50 overflow-hidden flex flex-col font-sans ${isMinimized ? 'w-72 sm:w-80 h-16' : 'w-[calc(100vw-2rem)] sm:w-[400px] h-[650px] max-h-[85vh] max-w-[90vw]'
         }`}
     >
       {/* Header */}

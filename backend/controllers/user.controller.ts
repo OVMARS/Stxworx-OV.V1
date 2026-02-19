@@ -2,7 +2,8 @@ import { type Request, type Response } from "express";
 import { z } from "zod";
 import { db } from "../db";
 import { users, reviews, projects } from "@shared/schema";
-import { eq, sql, and, count, avg } from "drizzle-orm";
+import { eq, sql, and, or, count, avg } from "drizzle-orm";
+import { projectService } from "../services/project.service";
 
 const updateProfileSchema = z.object({
   username: z.string().min(1).max(100).optional(),
@@ -25,6 +26,7 @@ export const userController = {
           username: users.username,
           role: users.role,
           isActive: users.isActive,
+          totalEarned: users.totalEarned,
           specialty: users.specialty,
           hourlyRate: users.hourlyRate,
           about: users.about,
@@ -112,6 +114,38 @@ export const userController = {
       return res.status(200).json(userReviews);
     } catch (error) {
       console.error("Get reviews error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  // GET /api/users/:address/projects
+  async getProjectsByAddress(req: Request, res: Response) {
+    try {
+      const { address } = req.params;
+      const [user] = await db
+        .select({ id: users.id, role: users.role })
+        .from(users)
+        .where(eq(users.stxAddress, address));
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      let userProjects;
+      if (user.role === "client") {
+        userProjects = await projectService.getByClientId(user.id);
+      } else {
+        userProjects = await projectService.getByFreelancerId(user.id);
+      }
+
+      const withBudget = userProjects.map((p) => ({
+        ...p,
+        budget: projectService.computeBudget(p),
+      }));
+
+      return res.status(200).json(withBudget);
+    } catch (error) {
+      console.error("Get user projects error:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   },

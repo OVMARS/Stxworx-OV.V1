@@ -58,6 +58,7 @@ interface AppState {
   milestoneSubmissions: Record<number, BackendMilestoneSubmission[]>;
   projectDisputes: Record<number, BackendDispute[]>;
   profileReviews: Record<string, BackendReview[]>;
+  publicUserProjects: Record<string, Project[]>;
   freelancerDashboardTab: 'applied' | 'active' | 'work' | 'completed' | 'earnings' | 'nft';
   authUser: AuthUser | null;
   isAuthChecking: boolean;
@@ -107,6 +108,7 @@ interface AppState {
   fetchMilestoneSubmissions: (projectId: number) => Promise<void>;
   fetchProjectDisputes: (projectId: number) => Promise<void>;
   fetchProfileReviews: (address: string) => Promise<void>;
+  fetchPublicUserProjects: (address: string) => Promise<void>;
   createDispute: (data: { projectId: number; milestoneNum: number; reason: string; evidenceUrl?: string; disputeTxId?: string }) => Promise<void>;
   createReview: (data: { projectId: number; revieweeId: number; rating: number; comment?: string }) => Promise<void>;
 
@@ -179,6 +181,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   milestoneSubmissions: {},
   projectDisputes: {},
   profileReviews: {},
+  publicUserProjects: {},
   freelancerDashboardTab: 'applied',
   authUser: null,
   isAuthChecking: false,
@@ -299,6 +302,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       }));
     } catch (e) {
       // Not found or no reviews
+    }
+  },
+
+  fetchPublicUserProjects: async (address: string) => {
+    try {
+      const bps = await api.users.getProjects(address);
+      const mapped = bps.map(mapBackendProject);
+      set((s) => ({
+        publicUserProjects: { ...s.publicUserProjects, [address]: mapped },
+      }));
+    } catch (e) {
+      // User may not have projects
     }
   },
 

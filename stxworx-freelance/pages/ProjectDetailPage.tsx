@@ -253,7 +253,7 @@ function renderProposalCard(
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <button
-              onClick={() => address && navigate(`/profile?address=${address}`)}
+              onClick={() => address && navigate(`/user/${address}`)}
               className="text-sm font-bold text-white hover:text-orange-400 transition-colors flex items-center gap-1"
             >
               {displayName}

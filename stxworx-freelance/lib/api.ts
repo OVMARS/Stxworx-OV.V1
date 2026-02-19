@@ -88,6 +88,10 @@ export interface BackendProject {
   updatedAt: string;
   /** Computed by GET list/detail — sum of milestone amounts as string */
   budget?: string;
+  /** Resolved by backend — client STX address */
+  clientAddress?: string;
+  /** Resolved by backend — freelancer STX address */
+  freelancerAddress?: string;
 }
 
 export interface BackendProposal {
@@ -220,8 +224,8 @@ export function mapBackendProject(bp: BackendProject): Project {
     title: bp.title,
     description: bp.description,
     category: bp.category,
-    clientAddress: '',
-    freelancerAddress: '',
+    clientAddress: bp.clientAddress || '',
+    freelancerAddress: bp.freelancerAddress || '',
     clientId: bp.clientId,
     freelancerId: bp.freelancerId ?? undefined,
     tokenType: bp.tokenType,
@@ -306,6 +310,9 @@ export const api = {
 
     getReviews: (address: string) =>
       request<BackendReview[]>(`/users/${address}/reviews`),
+
+    getProjects: (address: string) =>
+      request<BackendProject[]>(`/users/${address}/projects`),
 
     leaderboard: () =>
       request<LeaderboardEntry[]>('/users/leaderboard'),

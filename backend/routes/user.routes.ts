@@ -8,6 +8,7 @@ export const userRoutes = Router();
 userRoutes.get("/leaderboard", userController.getLeaderboard);
 userRoutes.get("/:address", userController.getByAddress);
 userRoutes.get("/:address/reviews", userController.getReviews);
+userRoutes.get("/:address/projects", userController.getProjectsByAddress);
 
 // Protected
 userRoutes.patch("/me", requireAuth, userController.updateMe);

@@ -193,7 +193,8 @@ const FreelancerPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 overflow-x-auto border-b border-slate-800 mb-6 sm:mb-8 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+      <div className="overflow-hidden w-full">
+        <div className="flex gap-1 overflow-x-auto border-b border-slate-800 mb-6 sm:mb-8 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -210,6 +211,7 @@ const FreelancerPage: React.FC = () => {
             )}
           </button>
         ))}
+        </div>
       </div>
 
       {/* Tab content */}

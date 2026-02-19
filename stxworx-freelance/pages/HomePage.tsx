@@ -26,15 +26,15 @@ const HomePage: React.FC = () => {
   const displayCategories = categories.length > 0 ? categories : fallbackCategories;
 
   return (
-    <div className="relative font-sans text-slate-200">
-      <div className="fixed inset-0 z-0 bg-[#020617]">
+    <div className="relative font-sans text-slate-200 overflow-x-hidden w-full max-w-[100vw]">
+      <div className="fixed inset-0 z-0 bg-[#020617] overflow-hidden">
         <div className="absolute inset-0 bg-grid-moving opacity-10" style={{
           backgroundImage: 'linear-gradient(rgba(249, 115, 22, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(249, 115, 22, 0.1) 1px, transparent 1px)',
           backgroundSize: '50px 50px',
         }} />
         <div className="absolute inset-0 bg-gradient-to-b from-[#020617] via-transparent to-[#020617] pointer-events-none" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 lg:pt-24 pb-12 sm:pb-16 lg:pb-20 relative z-10">
@@ -112,8 +112,8 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* Categories */}
-        <div className="mb-16 sm:mb-24 lg:mb-40 relative">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[300px] bg-blue-900/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="mb-16 sm:mb-24 lg:mb-40 relative overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[800px] h-[300px] bg-blue-900/10 rounded-full blur-[100px] pointer-events-none" />
           <div className="text-center mb-16 animate-slide-up delay-300">
             <div className="inline-block px-4 py-1.5 rounded-full bg-slate-900 border border-slate-700 text-slate-300 text-[10px] font-bold uppercase tracking-[0.2em] mb-4">
               Decentralized Talent
@@ -177,7 +177,7 @@ const HomePage: React.FC = () => {
                   onClick={() => { navigate('/client'); window.scrollTo(0, 0); }}
                   className="group relative overflow-hidden bg-[#0b0f19] p-5 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-white/10 hover:border-orange-500 transition-all duration-300 text-left"
                 >
-                  <div className="absolute right-0 top-0 p-32 bg-orange-600/5 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2 group-hover:bg-orange-600/10 transition-colors" />
+                  <div className="absolute right-0 top-0 w-32 h-32 sm:w-auto sm:p-32 bg-orange-600/5 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2 group-hover:bg-orange-600/10 transition-colors" />
                   <div className="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-white mb-6 group-hover:bg-orange-600 transition-colors">
                     <Users className="w-6 h-6" />
                   </div>
@@ -189,7 +189,7 @@ const HomePage: React.FC = () => {
                 </button>
 
                 <div className="group relative overflow-hidden bg-[#0b0f19] p-5 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-white/10 hover:border-blue-500 transition-all duration-300 text-left flex flex-col justify-between">
-                  <div className="absolute right-0 top-0 p-32 bg-blue-600/5 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2 group-hover:bg-blue-600/10 transition-colors" />
+                  <div className="absolute right-0 top-0 w-32 h-32 sm:w-auto sm:p-32 bg-blue-600/5 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2 group-hover:bg-blue-600/10 transition-colors" />
                   <div>
                     <div className="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-white mb-6 group-hover:bg-blue-600 transition-colors">
                       <Zap className="w-6 h-6" />
@@ -214,7 +214,7 @@ const HomePage: React.FC = () => {
 
       {/* Footer */}
       <footer className="bg-[#020617] border-t border-white/5 pt-10 sm:pt-14 md:pt-20 pb-8 sm:pb-10 relative overflow-hidden">
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-orange-600/5 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[600px] h-[300px] bg-orange-600/5 rounded-full blur-[100px] pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 md:gap-12 mb-10 sm:mb-14 md:mb-20">
             <div className="col-span-2 sm:col-span-2 md:col-span-1">

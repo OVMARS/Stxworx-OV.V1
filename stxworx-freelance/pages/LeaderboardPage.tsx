@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
 import { Trophy, Medal, ShieldCheck, ArrowRight, RefreshCw, Crown, Star, Users } from 'lucide-react';
 import { FreelancerProfile } from '../types';
 
 const LeaderboardPage: React.FC = () => {
+  const navigate = useNavigate();
   const { leaderboardData, wallet, fetchLeaderboard, setSelectedProfile } = useAppStore();
   const [loading, setLoading] = React.useState(false);
 
@@ -18,7 +20,7 @@ const LeaderboardPage: React.FC = () => {
   };
 
   const handleViewProfile = (profile: FreelancerProfile) => {
-    setSelectedProfile(profile);
+    navigate(`/user/${profile.address}`);
   };
 
   const podium = leaderboardData.slice(0, 3);
@@ -101,7 +103,7 @@ const LeaderboardPage: React.FC = () => {
       {/* Full Table */}
       {leaderboardData.length > 0 ? (
         <div className="bg-[#0b0f19] rounded-xl sm:rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
-          <div className="overflow-x-auto -mx-0">
+          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[500px]">
               <thead>
                 <tr className="text-slate-500 text-[10px] font-bold uppercase tracking-wider border-b border-slate-800/50">

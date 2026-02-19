@@ -53,7 +53,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 animate-in fade-in slide-in-from-bottom-4">
               {/* Stat Cards */}
               <div className="bg-[#0b0f19] p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-800 relative overflow-hidden">
-                 <div className="absolute top-0 right-0 p-16 bg-orange-600/5 rounded-full blur-2xl"></div>
+                 <div className="absolute top-0 right-0 w-16 h-16 sm:w-auto sm:p-16 bg-orange-600/5 rounded-full blur-2xl"></div>
                  <div className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Total Users</div>
                  <div className="text-2xl sm:text-3xl font-black text-white">{adminDashboardStats?.totalUsers ?? '—'}</div>
                  <div className="text-slate-500 text-xs font-bold mt-2">Registered accounts</div>

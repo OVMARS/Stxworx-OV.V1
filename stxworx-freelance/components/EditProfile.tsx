@@ -70,7 +70,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ profile, onSave, onCancel, is
         
         {/* Social Verification Section */}
         <div className="bg-[#0b0f19] p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-800 relative overflow-hidden">
-           <div className="absolute top-0 right-0 p-24 bg-blue-500/5 rounded-full blur-2xl pointer-events-none"></div>
+           <div className="absolute top-0 right-0 w-24 h-24 sm:w-auto sm:p-24 bg-blue-500/5 rounded-full blur-2xl pointer-events-none"></div>
            <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-wide mb-4 sm:mb-6 flex items-center gap-2 relative z-10">
              <Shield className="w-5 h-5 text-purple-500" /> Identity Verification
            </h3>

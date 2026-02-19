@@ -95,10 +95,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
           {project.description}
         </p>
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono text-slate-500 mb-4 sm:mb-6 bg-slate-900/50 p-2.5 sm:p-3 rounded-lg border border-slate-800/50">
-          <div className="flex items-center gap-2">
-            <User className="h-3 w-3 text-orange-500" />
-            <span className="truncate max-w-[150px]">{role === 'client' ? `Freelancer: ${project.freelancerAddress}` : `Client: ${project.clientAddress}`}</span>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono text-slate-500 mb-4 sm:mb-6 bg-slate-900/50 p-2.5 sm:p-3 rounded-lg border border-slate-800/50 overflow-hidden">
+          <div className="flex items-center gap-2 min-w-0">
+            <User className="h-3 w-3 text-orange-500 shrink-0" />
+            <span className="truncate">{role === 'client' ? `Freelancer: ${project.freelancerAddress}` : `Client: ${project.clientAddress}`}</span>
           </div>
           <div className="flex items-center gap-2">
             <Calendar className="h-3 w-3 text-orange-500" />
