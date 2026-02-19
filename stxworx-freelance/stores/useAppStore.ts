@@ -59,7 +59,7 @@ interface AppState {
   projectDisputes: Record<number, BackendDispute[]>;
   profileReviews: Record<string, BackendReview[]>;
   publicUserProjects: Record<string, Project[]>;
-  freelancerDashboardTab: 'applied' | 'active' | 'work' | 'completed' | 'earnings' | 'nft';
+  freelancerDashboardTab: 'applied' | 'active' | 'contracts' | 'completed' | 'earnings' | 'nft';
   authUser: AuthUser | null;
   isAuthChecking: boolean;
 

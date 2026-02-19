@@ -137,11 +137,12 @@ const FreelancerPage: React.FC = () => {
   );
 
   const tabs = [
-    { key: 'applied' as const,   label: 'Pending',    icon: <Send className="w-4 h-4" />,         count: pendingProposals.length },
-    { key: 'active' as const,    label: 'Accepted',   icon: <CheckCircle2 className="w-4 h-4" />, count: acceptedProposals.length },
-    { key: 'completed' as const, label: 'Rejected',   icon: <XCircle className="w-4 h-4" />,      count: rejectedProposals.length },
-    { key: 'earnings' as const,  label: 'Earnings',   icon: <DollarSign className="w-4 h-4" />,   count: null },
-    { key: 'nft' as const,       label: 'NFT Badges', icon: <Award className="w-4 h-4" />,        count: null },
+    { key: 'applied' as const,    label: 'Pending',           icon: <Send className="w-4 h-4" />,         count: pendingProposals.length },
+    { key: 'active' as const,     label: 'Accepted',          icon: <CheckCircle2 className="w-4 h-4" />, count: acceptedProposals.length },
+    { key: 'contracts' as const,  label: 'Active Contracts',  icon: <Play className="w-4 h-4" />,         count: myActiveProjects.length },
+    { key: 'completed' as const,  label: 'Rejected',          icon: <XCircle className="w-4 h-4" />,      count: rejectedProposals.length },
+    { key: 'earnings' as const,   label: 'Earnings',          icon: <DollarSign className="w-4 h-4" />,   count: null },
+    { key: 'nft' as const,        label: 'NFT Badges',        icon: <Award className="w-4 h-4" />,        count: null },
   ];
 
   return (
@@ -249,6 +250,28 @@ const FreelancerPage: React.FC = () => {
               icon={CheckCircle2}
               title="No Accepted Proposals"
               subtitle="Once a client accepts your proposal, it will appear here."
+            />
+          )}
+        </div>
+      )}
+
+      {freelancerDashboardTab === 'contracts' && (
+        <div className="space-y-4">
+          {myActiveProjects.length > 0 ? (
+            myActiveProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                role="freelancer"
+                onAction={handleProjectAction}
+                isProcessing={isProcessing}
+              />
+            ))
+          ) : (
+            <EmptyState
+              icon={Play}
+              title="No Active Contracts"
+              subtitle="Once a client deploys escrow for your accepted proposal, the contract will appear here."
             />
           )}
         </div>

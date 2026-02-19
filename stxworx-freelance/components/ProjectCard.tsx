@@ -5,6 +5,7 @@ import { Calendar, User, CheckCircle2, Clock, Lock, ArrowUpRight, AlertCircle, S
 import { formatUSD, tokenToUsd } from '../services/StacksService';
 import { useAppStore } from '../stores/useAppStore';
 import type { BackendMilestoneSubmission } from '../lib/api';
+import { completeMilestoneContractCall, releaseMilestoneContractCall, isUserCancellation } from '../lib/contracts';
 import DisputeModal from './DisputeModal';
 import ReviewModal from './ReviewModal';
 
@@ -230,15 +231,38 @@ const MilestoneItem: React.FC<{
   submissions: BackendMilestoneSubmission[];
 }> = ({ index, milestone, project, role, onAction, isProcessing, submissions }) => {
   const [submissionLink, setSubmissionLink] = React.useState('');
+  const [isPending, setIsPending] = React.useState(false);
 
   // Get the latest submission for this milestone
   const latestSubmission = submissions.length > 0
     ? submissions.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())[0]
     : null;
 
-  const handleFreelancerSubmit = () => {
-    if (!submissionLink) return;
-    onAction(project.id, 'submit_milestone', { milestoneId: milestone.id, link: submissionLink });
+  const handleFreelancerSubmit = async () => {
+    if (!submissionLink || !project.onChainId) return;
+    setIsPending(true);
+    try {
+      const { txId } = await completeMilestoneContractCall(project.onChainId, milestone.id);
+      onAction(project.id, 'submit_milestone', { milestoneId: milestone.id, link: submissionLink, completionTxId: txId });
+      setSubmissionLink('');
+    } catch (err) {
+      if (!isUserCancellation(err)) console.error('Milestone submit failed:', err);
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  const handleClientApprove = async () => {
+    if (!project.onChainId || !latestSubmission) return;
+    setIsPending(true);
+    try {
+      const { txId } = await releaseMilestoneContractCall(project.onChainId, milestone.id, project.tokenType);
+      onAction(project.id, 'approve_milestone', { submissionId: latestSubmission.id, milestoneId: milestone.id, releaseTxId: txId });
+    } catch (err) {
+      if (!isUserCancellation(err)) console.error('Milestone release failed:', err);
+    } finally {
+      setIsPending(false);
+    }
   };
 
   const getStatusColor = () => {
@@ -300,10 +324,10 @@ const MilestoneItem: React.FC<{
               />
               <button
                 onClick={handleFreelancerSubmit}
-                disabled={!submissionLink || isProcessing}
+                disabled={!submissionLink || isProcessing || isPending}
                 className="w-full sm:w-auto px-3 py-2 bg-blue-600 text-white text-xs font-bold uppercase tracking-wider rounded hover:bg-blue-500 disabled:opacity-50"
               >
-                Submit Work
+                {isPending ? 'Confirming...' : 'Submit Work'}
               </button>
             </div>
           )}
@@ -323,15 +347,15 @@ const MilestoneItem: React.FC<{
               )}
               <div className="flex flex-col sm:flex-row gap-2">
                 <button
-                  onClick={() => onAction(project.id, 'approve_milestone', { submissionId: latestSubmission.id, milestoneId: milestone.id, releaseTxId: 'pending' })}
-                  disabled={isProcessing}
+                  onClick={handleClientApprove}
+                  disabled={isProcessing || isPending}
                   className="flex-1 px-3 py-2 bg-green-600 text-white text-xs font-bold uppercase tracking-wider rounded hover:bg-green-500 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {isProcessing ? 'Verifying...' : 'Approve & Release'}
+                  {isPending ? 'Confirm in Wallet...' : isProcessing ? 'Releasing...' : 'Approve & Release'}
                 </button>
                 <button
                   onClick={() => onAction(project.id, 'reject_milestone', { submissionId: latestSubmission.id, milestoneId: milestone.id })}
-                  disabled={isProcessing}
+                  disabled={isProcessing || isPending}
                   className="px-3 py-2 bg-red-600/80 text-white text-xs font-bold uppercase tracking-wider rounded hover:bg-red-500 disabled:opacity-50"
                 >
                   Reject
