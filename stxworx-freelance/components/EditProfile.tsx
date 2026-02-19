@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { FreelancerProfile } from '../types';
-import { Save, User, MapPin, Briefcase, Code, Link as LinkIcon, Image as ImageIcon, Twitter, Shield, CheckCircle2 } from 'lucide-react';
+import { Save, User, MapPin, Briefcase, Code, Link as LinkIcon, Image as ImageIcon, Twitter, Shield, CheckCircle2, Building2, Target } from 'lucide-react';
 
 interface EditProfileProps {
   profile: FreelancerProfile;
@@ -11,12 +11,33 @@ interface EditProfileProps {
   onConnectX: () => void;
   isXConnected?: boolean;
   xUsername?: string;
+  role?: 'client' | 'freelancer';
 }
 
-const EditProfile: React.FC<EditProfileProps> = ({ profile, onSave, onCancel, isSaving, onConnectX, isXConnected, xUsername }) => {
+const EditProfile: React.FC<EditProfileProps> = ({ profile, onSave, onCancel, isSaving, onConnectX, isXConnected, xUsername, role = 'freelancer' }) => {
+  const isClient = role === 'client';
   const [formData, setFormData] = useState<FreelancerProfile>(profile);
   const [newSkill, setNewSkill] = useState('');
   const [newPortfolioItem, setNewPortfolioItem] = useState('');
+  const [newInterest, setNewInterest] = useState('');
+
+  const handleAddInterest = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newInterest && (!formData.projectInterests || !formData.projectInterests.includes(newInterest))) {
+      setFormData(prev => ({
+        ...prev,
+        projectInterests: [...(prev.projectInterests || []), newInterest]
+      }));
+      setNewInterest('');
+    }
+  };
+
+  const removeInterest = (interest: string) => {
+    setFormData(prev => ({
+      ...prev,
+      projectInterests: prev.projectInterests?.filter(i => i !== interest) || []
+    }));
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -62,7 +83,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ profile, onSave, onCancel, is
       <div className="flex justify-between items-center mb-6 sm:mb-8">
         <div>
            <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">Edit Profile</h1>
-           <p className="text-slate-400 text-xs sm:text-sm mt-1">Update your professional information seen by clients.</p>
+           <p className="text-slate-400 text-xs sm:text-sm mt-1">{isClient ? 'Update your profile information visible to freelancers.' : 'Update your professional information seen by clients.'}</p>
         </div>
       </div>
 
@@ -130,29 +151,57 @@ const EditProfile: React.FC<EditProfileProps> = ({ profile, onSave, onCancel, is
                  </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-500 mb-2">Professional Specialty</label>
-                <input 
-                  type="text" 
-                  name="specialty"
-                  value={formData.specialty}
-                  onChange={handleInputChange}
-                  placeholder="e.g. Smart Contract Developer"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:border-orange-500 focus:outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-500 mb-2">Hourly Rate (STX)</label>
-                <input 
-                  type="number" 
-                  name="hourlyRate"
-                  value={formData.hourlyRate || ''}
-                  onChange={handleInputChange}
-                  placeholder="e.g. 50"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:border-orange-500 focus:outline-none transition-colors"
-                />
-              </div>
+              {isClient ? (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-500 mb-2">Company / Organization</label>
+                    <input 
+                      type="text" 
+                      name="company"
+                      value={formData.company || ''}
+                      onChange={handleInputChange}
+                      placeholder="e.g. Acme DAO, Independent"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:border-orange-500 focus:outline-none transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-500 mb-2">Industry / Sector</label>
+                    <input 
+                      type="text" 
+                      name="specialty"
+                      value={formData.specialty}
+                      onChange={handleInputChange}
+                      placeholder="e.g. DeFi, NFTs, Gaming"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:border-orange-500 focus:outline-none transition-colors"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-500 mb-2">Professional Specialty</label>
+                    <input 
+                      type="text" 
+                      name="specialty"
+                      value={formData.specialty}
+                      onChange={handleInputChange}
+                      placeholder="e.g. Smart Contract Developer"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:border-orange-500 focus:outline-none transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-500 mb-2">Hourly Rate (STX)</label>
+                    <input 
+                      type="number" 
+                      name="hourlyRate"
+                      value={formData.hourlyRate || ''}
+                      onChange={handleInputChange}
+                      placeholder="e.g. 50"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:border-orange-500 focus:outline-none transition-colors"
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="col-span-1 md:col-span-2">
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-2">Bio / About</label>
@@ -161,100 +210,148 @@ const EditProfile: React.FC<EditProfileProps> = ({ profile, onSave, onCancel, is
                   rows={4}
                   value={formData.about || ''}
                   onChange={handleInputChange}
-                  placeholder="Tell clients about your experience..."
+                  placeholder={isClient ? 'Tell freelancers about yourself and the projects you commission...' : 'Tell clients about your experience...'}
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:border-orange-500 focus:outline-none transition-colors resize-none"
                 />
               </div>
            </div>
         </div>
 
-        {/* Skills Section */}
-        <div className="bg-[#0b0f19] p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-800">
-           <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-wide mb-4 sm:mb-6 flex items-center gap-2">
-             <Code className="w-5 h-5 text-blue-500" /> Skills & Technologies
-           </h3>
+        {isClient ? (
+          /* Client: Project Interests Section */
+          <div className="bg-[#0b0f19] p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-800">
+             <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-wide mb-4 sm:mb-6 flex items-center gap-2">
+               <Target className="w-5 h-5 text-blue-500" /> Project Interests
+             </h3>
+             <p className="text-slate-500 text-xs mb-4">What types of projects are you looking to commission?</p>
 
-           <div className="mb-4 flex gap-2">
-              <input 
-                type="text" 
-                value={newSkill}
-                onChange={(e) => setNewSkill(e.target.value)}
-                placeholder="Add a skill (e.g. Clarity, React, Rust)"
-                className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:border-orange-500 focus:outline-none transition-colors"
-                onKeyDown={(e) => e.key === 'Enter' && handleAddSkill(e)}
-              />
-              <button 
-                type="button"
-                onClick={handleAddSkill}
-                className="px-4 py-2 bg-slate-800 text-white font-bold uppercase rounded-lg hover:bg-slate-700 transition-colors"
-              >
-                Add
-              </button>
-           </div>
+             <div className="mb-4 flex gap-2">
+                <input 
+                  type="text" 
+                  value={newInterest}
+                  onChange={(e) => setNewInterest(e.target.value)}
+                  placeholder="e.g. Smart Contracts, dApp Frontend, Token Launch"
+                  className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:border-orange-500 focus:outline-none transition-colors"
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddInterest(e)}
+                />
+                <button 
+                  type="button"
+                  onClick={handleAddInterest}
+                  className="px-4 py-2 bg-slate-800 text-white font-bold uppercase rounded-lg hover:bg-slate-700 transition-colors"
+                >
+                  Add
+                </button>
+             </div>
 
-           <div className="flex flex-wrap gap-2">
-              {formData.skills?.map((skill, i) => (
-                <span key={i} className="px-3 py-1.5 rounded bg-slate-900 border border-slate-800 text-slate-300 text-sm flex items-center gap-2">
-                   {skill}
-                   <button 
-                     type="button" 
-                     onClick={() => removeSkill(skill)}
-                     className="text-slate-500 hover:text-red-500"
-                   >
-                     &times;
-                   </button>
-                </span>
-              ))}
-              {(!formData.skills || formData.skills.length === 0) && (
-                <p className="text-slate-500 text-sm italic">No skills added yet.</p>
-              )}
-           </div>
-        </div>
+             <div className="flex flex-wrap gap-2">
+                {formData.projectInterests?.map((interest, i) => (
+                  <span key={i} className="px-3 py-1.5 rounded bg-slate-900 border border-slate-800 text-slate-300 text-sm flex items-center gap-2">
+                     {interest}
+                     <button 
+                       type="button" 
+                       onClick={() => removeInterest(interest)}
+                       className="text-slate-500 hover:text-red-500"
+                     >
+                       &times;
+                     </button>
+                  </span>
+                ))}
+                {(!formData.projectInterests || formData.projectInterests.length === 0) && (
+                  <p className="text-slate-500 text-sm italic">No interests added yet.</p>
+                )}
+             </div>
+          </div>
+        ) : (
+          <>
+            {/* Freelancer: Skills Section */}
+            <div className="bg-[#0b0f19] p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-800">
+               <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-wide mb-4 sm:mb-6 flex items-center gap-2">
+                 <Code className="w-5 h-5 text-blue-500" /> Skills & Technologies
+               </h3>
 
-        {/* Portfolio Section */}
-        <div className="bg-[#0b0f19] p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-800">
-           <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-wide mb-4 sm:mb-6 flex items-center gap-2">
-             <Briefcase className="w-5 h-5 text-green-500" /> Portfolio Images
-           </h3>
+               <div className="mb-4 flex gap-2">
+                  <input 
+                    type="text" 
+                    value={newSkill}
+                    onChange={(e) => setNewSkill(e.target.value)}
+                    placeholder="Add a skill (e.g. Clarity, React, Rust)"
+                    className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:border-orange-500 focus:outline-none transition-colors"
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddSkill(e)}
+                  />
+                  <button 
+                    type="button"
+                    onClick={handleAddSkill}
+                    className="px-4 py-2 bg-slate-800 text-white font-bold uppercase rounded-lg hover:bg-slate-700 transition-colors"
+                  >
+                    Add
+                  </button>
+               </div>
 
-           <div className="mb-4 flex gap-2">
-              <input 
-                type="text" 
-                value={newPortfolioItem}
-                onChange={(e) => setNewPortfolioItem(e.target.value)}
-                placeholder="Paste image URL..."
-                className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:border-orange-500 focus:outline-none transition-colors"
-                onKeyDown={(e) => e.key === 'Enter' && handleAddPortfolio(e)}
-              />
-              <button 
-                type="button"
-                onClick={handleAddPortfolio}
-                className="px-4 py-2 bg-slate-800 text-white font-bold uppercase rounded-lg hover:bg-slate-700 transition-colors"
-              >
-                Add
-              </button>
-           </div>
+               <div className="flex flex-wrap gap-2">
+                  {formData.skills?.map((skill, i) => (
+                    <span key={i} className="px-3 py-1.5 rounded bg-slate-900 border border-slate-800 text-slate-300 text-sm flex items-center gap-2">
+                       {skill}
+                       <button 
+                         type="button" 
+                         onClick={() => removeSkill(skill)}
+                         className="text-slate-500 hover:text-red-500"
+                       >
+                         &times;
+                       </button>
+                    </span>
+                  ))}
+                  {(!formData.skills || formData.skills.length === 0) && (
+                    <p className="text-slate-500 text-sm italic">No skills added yet.</p>
+                  )}
+               </div>
+            </div>
 
-           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {formData.portfolio?.map((img, i) => (
-                 <div key={i} className="aspect-video rounded-lg overflow-hidden border border-slate-800 relative group">
-                    <img src={img} alt={`Portfolio ${i}`} className="w-full h-full object-cover" />
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        setFormData(prev => ({
-                           ...prev,
-                           portfolio: prev.portfolio?.filter((_, idx) => idx !== i)
-                        }));
-                      }}
-                      className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      &times;
-                    </button>
-                 </div>
-              ))}
-           </div>
-        </div>
+            {/* Freelancer: Portfolio Section */}
+            <div className="bg-[#0b0f19] p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-800">
+               <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-wide mb-4 sm:mb-6 flex items-center gap-2">
+                 <Briefcase className="w-5 h-5 text-green-500" /> Portfolio Images
+               </h3>
+
+               <div className="mb-4 flex gap-2">
+                  <input 
+                    type="text" 
+                    value={newPortfolioItem}
+                    onChange={(e) => setNewPortfolioItem(e.target.value)}
+                    placeholder="Paste image URL..."
+                    className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:border-orange-500 focus:outline-none transition-colors"
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddPortfolio(e)}
+                  />
+                  <button 
+                    type="button"
+                    onClick={handleAddPortfolio}
+                    className="px-4 py-2 bg-slate-800 text-white font-bold uppercase rounded-lg hover:bg-slate-700 transition-colors"
+                  >
+                    Add
+                  </button>
+               </div>
+
+               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {formData.portfolio?.map((img, i) => (
+                     <div key={i} className="aspect-video rounded-lg overflow-hidden border border-slate-800 relative group">
+                        <img src={img} alt={`Portfolio ${i}`} className="w-full h-full object-cover" />
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({
+                               ...prev,
+                               portfolio: prev.portfolio?.filter((_, idx) => idx !== i)
+                            }));
+                          }}
+                          className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          &times;
+                        </button>
+                     </div>
+                  ))}
+               </div>
+            </div>
+          </>
+        )}
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 pt-4">

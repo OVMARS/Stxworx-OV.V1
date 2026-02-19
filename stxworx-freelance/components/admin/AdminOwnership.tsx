@@ -6,6 +6,7 @@ import {
    getProposedOwner,
    proposeOwnershipContractCall,
    acceptOwnershipContractCall,
+   isUserCancellation,
 } from '../../lib/contracts';
 import { CONTRACT_ADDRESS, CONTRACT_NAME } from '../../lib/constants';
 
@@ -73,25 +74,20 @@ const AdminOwnership: React.FC = () => {
       setTxError('');
 
       try {
-         await proposeOwnershipContractCall(
-            addr,
-            async (txData: any) => {
-               const txId = txData.txId || txData.txid || '';
-               setLastTxId(txId);
-               setTxStatus('submitted');
-               // Refresh after a short delay to let chain index
-               setTimeout(() => {
-                  fetchOwnership();
-               }, 3000);
-            },
-            () => {
-               setTxStatus('idle');
-               setTxError('Transaction cancelled.');
-            }
-         );
+         const { txId } = await proposeOwnershipContractCall(addr);
+         setLastTxId(txId);
+         setTxStatus('submitted');
+         setTimeout(() => {
+            fetchOwnership();
+         }, 3000);
       } catch (e: any) {
-         setTxStatus('error');
-         setTxError(e?.message || 'Failed to open wallet.');
+         if (isUserCancellation(e)) {
+            setTxStatus('idle');
+            setTxError('Transaction cancelled.');
+         } else {
+            setTxStatus('error');
+            setTxError(e?.message || 'Failed to open wallet.');
+         }
       }
    };
 
@@ -101,23 +97,20 @@ const AdminOwnership: React.FC = () => {
       setTxError('');
 
       try {
-         await acceptOwnershipContractCall(
-            async (txData: any) => {
-               const txId = txData.txId || txData.txid || '';
-               setLastTxId(txId);
-               setTxStatus('submitted');
-               setTimeout(() => {
-                  fetchOwnership();
-               }, 3000);
-            },
-            () => {
-               setTxStatus('idle');
-               setTxError('Transaction cancelled.');
-            }
-         );
+         const { txId } = await acceptOwnershipContractCall();
+         setLastTxId(txId);
+         setTxStatus('submitted');
+         setTimeout(() => {
+            fetchOwnership();
+         }, 3000);
       } catch (e: any) {
-         setTxStatus('error');
-         setTxError(e?.message || 'Failed to open wallet.');
+         if (isUserCancellation(e)) {
+            setTxStatus('idle');
+            setTxError('Transaction cancelled.');
+         } else {
+            setTxStatus('error');
+            setTxError(e?.message || 'Failed to open wallet.');
+         }
       }
    };
 

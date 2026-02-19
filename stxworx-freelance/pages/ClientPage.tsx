@@ -1,14 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
 import ProjectCard from '../components/ProjectCard';
-import { PlusCircle, Layers, Users, FileText, Briefcase, ChevronRight } from 'lucide-react';
+import {
+  PlusCircle, Layers, Users, FileText, Briefcase, ChevronRight,
+  Settings, DollarSign, CheckCircle2, Activity, TrendingUp, User,
+} from 'lucide-react';
+import { formatUSD, tokenToUsd } from '../services/StacksService';
 
 const ClientPage: React.FC = () => {
   const navigate = useNavigate();
   const {
     myPostedProjects, isProcessing, handleProjectAction, setIsModalOpen,
     fetchMyProjects, fetchProjectProposals, projectProposals, wallet,
+    currentUserProfile,
   } = useAppStore();
 
   useEffect(() => {
@@ -22,12 +27,50 @@ const ClientPage: React.FC = () => {
     });
   }, [myPostedProjects]);
 
+  const completedProjects = useMemo(() => myPostedProjects.filter(p => p.status === 'completed'), [myPostedProjects]);
+  const activeProjects = useMemo(() => myPostedProjects.filter(p => p.status === 'active'), [myPostedProjects]);
+  const openProjects = useMemo(() => myPostedProjects.filter(p => p.status === 'open'), [myPostedProjects]);
+  const totalSpent = useMemo(
+    () => completedProjects.reduce((sum, p) => sum + tokenToUsd(p.totalBudget, p.tokenType), 0),
+    [completedProjects]
+  );
+  const totalPendingProposals = useMemo(
+    () => Object.values(projectProposals).reduce((sum, arr) => sum + arr.filter(p => p.status === 'pending').length, 0),
+    [projectProposals]
+  );
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-6 sm:mb-8 gap-4">
+      {/* ─── Header with Profile ─── */}
+      <div className="flex flex-col gap-4 mb-6 sm:mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">Client Dashboard</h1>
-          <p className="text-slate-400 text-sm mt-1">Manage your contracts, proposals, and escrow.</p>
+          <div className="flex items-center gap-4 mt-2">
+            {currentUserProfile && (
+              <div className="flex items-center gap-2">
+                <img src={currentUserProfile.avatar} className="w-6 h-6 rounded-full border border-slate-700" alt="" />
+                <span className="text-slate-300 font-bold text-sm">{currentUserProfile.name}</span>
+              </div>
+            )}
+            <div className="h-4 w-px bg-slate-700" />
+            <button
+              onClick={() => navigate('/edit-profile')}
+              className="text-xs font-bold text-orange-500 hover:text-white flex items-center gap-1 transition-colors"
+            >
+              <Settings className="w-3 h-3" /> Edit Profile
+            </button>
+            {wallet.address && (
+              <>
+                <div className="h-4 w-px bg-slate-700" />
+                <button
+                  onClick={() => navigate(`/user/${wallet.address}`)}
+                  className="text-xs font-bold text-blue-400 hover:text-white flex items-center gap-1 transition-colors"
+                >
+                  <User className="w-3 h-3" /> View Public Profile
+                </button>
+              </>
+            )}
+          </div>
         </div>
         <div className="flex gap-2 sm:gap-3">
           <button
@@ -45,6 +88,42 @@ const ClientPage: React.FC = () => {
         </div>
       </div>
 
+      {/* ─── Stats Row ─── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8">
+        <div className="bg-[#0b0f19] rounded-xl border border-blue-900/50 p-3 sm:p-4 text-center">
+          <div className="text-xl sm:text-2xl font-black text-blue-400">{myPostedProjects.length}</div>
+          <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mt-1">Total Projects</div>
+        </div>
+        <div className="bg-[#0b0f19] rounded-xl border border-orange-900/50 p-3 sm:p-4 text-center">
+          <div className="text-xl sm:text-2xl font-black text-orange-400">{activeProjects.length}</div>
+          <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mt-1">Active Contracts</div>
+        </div>
+        <div className="bg-[#0b0f19] rounded-xl border border-emerald-900/50 p-3 sm:p-4 text-center">
+          <div className="text-xl sm:text-2xl font-black text-emerald-400">{completedProjects.length}</div>
+          <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mt-1">Completed</div>
+        </div>
+        <div className="bg-[#0b0f19] rounded-xl border border-amber-900/50 p-3 sm:p-4 text-center">
+          <div className="text-xl sm:text-2xl font-black text-amber-400">{formatUSD(totalSpent)}</div>
+          <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mt-1">Total Spent</div>
+        </div>
+      </div>
+
+      {/* ─── Pending Proposals Alert ─── */}
+      {totalPendingProposals > 0 && (
+        <div className="mb-6 p-3 sm:p-4 bg-orange-950/20 border border-orange-900/40 rounded-xl flex items-center gap-3">
+          <div className="p-2 bg-orange-500/10 rounded-lg shrink-0">
+            <Users className="w-5 h-5 text-orange-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-white">
+              {totalPendingProposals} pending proposal{totalPendingProposals !== 1 ? 's' : ''} awaiting review
+            </p>
+            <p className="text-xs text-slate-400 mt-0.5">Click on a project below to review and accept proposals.</p>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Projects List ─── */}
       <div className="space-y-8">
         {myPostedProjects.length > 0 ? (
           myPostedProjects.map((project) => {

@@ -51,40 +51,40 @@ const ProjectDetailPage: React.FC = () => {
     setDeployingEscrow(true);
 
     try {
-      const { createProjectContractCall, getOnChainProjectCount } = await import('../lib/contracts');
+      const { createProjectContractCall, getOnChainProjectCount, isUserCancellation } = await import('../lib/contracts');
 
       // Read the current on-chain project counter BEFORE submitting
-      // so we can derive the new ID (counter + 1) after TX is sent
       const currentCount = await getOnChainProjectCount();
       const expectedOnChainId = currentCount + 1;
 
       const milestoneData = project.milestones.map((m) => ({ amount: m.amount }));
 
-      await createProjectContractCall(
-        {
+      try {
+        const { txId } = await createProjectContractCall({
           freelancerAddress: acceptedProposal.freelancerAddress,
           totalBudget: project.totalBudget,
           tokenType: project.tokenType as 'STX' | 'sBTC',
           milestones: milestoneData,
-        },
-        async (txData) => {
-          console.log('Escrow transaction sent:', txData);
-          await handleProjectAction(project.id, 'activate', {
-            escrowTxId: txData.txId,
-            onChainId: expectedOnChainId,
-          });
-          setDeployingEscrow(false);
-          fetchMyProjects();
-        },
-        () => {
+        });
+
+        console.log('Escrow transaction sent:', txId);
+        await handleProjectAction(project.id, 'activate', {
+          escrowTxId: txId,
+          onChainId: expectedOnChainId,
+        });
+        fetchMyProjects();
+      } catch (walletErr) {
+        if (isUserCancellation(walletErr)) {
           console.log('Escrow transaction canceled');
-          setDeployingEscrow(false);
+        } else {
+          throw walletErr;
         }
-      );
+      }
     } catch (error: any) {
       console.error('Escrow deploy failed:', error);
-      setDeployingEscrow(false);
       alert('Failed to deploy escrow: ' + (error.message || 'Unknown error'));
+    } finally {
+      setDeployingEscrow(false);
     }
   }, [project, acceptedProposal]);
 

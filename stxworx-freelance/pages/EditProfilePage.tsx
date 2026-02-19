@@ -5,27 +5,30 @@ import EditProfile from '../components/EditProfile';
 
 const EditProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUserProfile, isProcessing, handleSaveProfile, handleConnectX, wallet } = useAppStore();
+  const { currentUserProfile, isProcessing, handleSaveProfile, handleConnectX, wallet, userRole } = useAppStore();
+
+  const dashboardPath = userRole === 'client' ? '/client' : '/freelancer';
 
   if (!currentUserProfile) {
-    navigate('/freelancer');
+    navigate(dashboardPath);
     return null;
   }
 
   const onSave = async (updated: any) => {
     await handleSaveProfile(updated);
-    navigate('/freelancer');
+    navigate(dashboardPath);
   };
 
   return (
     <EditProfile
       profile={currentUserProfile}
       onSave={onSave}
-      onCancel={() => navigate('/freelancer')}
+      onCancel={() => navigate(dashboardPath)}
       isSaving={isProcessing}
       onConnectX={handleConnectX}
       isXConnected={wallet.isXConnected}
       xUsername={wallet.xUsername}
+      role={userRole === 'client' ? 'client' : 'freelancer'}
     />
   );
 };

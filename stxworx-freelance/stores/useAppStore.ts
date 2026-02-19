@@ -121,6 +121,7 @@ interface AppState {
   handleConnectX: () => Promise<void>;
   handleSaveProfile: (updatedProfile: FreelancerProfile) => Promise<void>;
   viewProfileByAddress: (address: string, name?: string) => Promise<FreelancerProfile>;
+  _refreshProfile: (address: string) => Promise<void>;
   incrementBlock: () => void;
 
   // Notification actions
@@ -373,13 +374,16 @@ export const useAppStore = create<AppState>((set, get) => ({
         wallet: { ...s.wallet, isConnected: true, address: userAddress },
       }));
 
+      let authenticated = false;
+
       // 1. Try existing backend session (httpOnly cookie)
       try {
         const { user } = await api.auth.me();
         if (user.stxAddress === userAddress) {
           // Valid session for THIS wallet — use role from backend
           localStorage.setItem(roleKeyFor(userAddress), user.role);
-          set({ userRole: user.role as UserRole, showRoleModal: false });
+          set({ authUser: user, userRole: user.role as UserRole, showRoleModal: false });
+          authenticated = true;
         } else {
           // Cookie belongs to a DIFFERENT wallet — clear stale session
           await api.auth.logout().catch(() => {});
@@ -392,6 +396,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           // Wallet exists in DB — re-authenticate with their STORED role
           try {
             await get().verifyAndLogin(backendUser.role as 'client' | 'freelancer');
+            authenticated = true;
           } catch {
             // User cancelled signing — show role modal as fallback
             set({ userRole: null, showRoleModal: true });
@@ -403,32 +408,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         }
       }
 
-      // Fetch user profile from backend
-      api.users.getByAddress(userAddress)
-        .then((backendUser) => {
-          set({ currentUserProfile: mapBackendUserToProfile(backendUser) });
-        })
-        .catch(() => {
-          // User not in DB yet (pre-auth) — create a shell profile
-          set({
-            currentUserProfile: {
-              rank: 0,
-              name: userAddress.slice(0, 8),
-              address: userAddress,
-              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userAddress}`,
-              totalEarnings: 0,
-              jobsCompleted: 0,
-              rating: 0,
-              specialty: 'Generalist',
-              badges: [],
-              about: '',
-              portfolio: [],
-              isIdVerified: false,
-              isSkillVerified: false,
-              isPortfolioVerified: false,
-            },
-          });
-        });
+      // Fetch user profile AFTER auth completes so the user exists in DB
+      await get()._refreshProfile(userAddress);
 
       const networkUrl = 'https://api.testnet.hiro.so';
       fetch(`${networkUrl}/extended/v1/address/${userAddress}/balances`)
@@ -439,9 +420,11 @@ export const useAppStore = create<AppState>((set, get) => ({
         })
         .catch(() => {});
 
-      // Fetch notifications for connected user
-      get().fetchNotifications();
-      get().fetchUnreadCount();
+      // Fetch notifications only if authenticated
+      if (authenticated) {
+        get().fetchNotifications();
+        get().fetchUnreadCount();
+      }
     } else {
       set({
         wallet: {
@@ -503,7 +486,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Use the role from the backend response (may differ from `role` for existing users)
       const backendRole = (user.role as UserRole) ?? role;
       localStorage.setItem(roleKeyFor(addr), backendRole as string);
-      set({ userRole: backendRole, showRoleModal: false });
+      set({ authUser: user, userRole: backendRole, showRoleModal: false });
+      // Refresh profile now that user exists in DB
+      await get()._refreshProfile(addr);
+      // Also hydrate notifications
+      get().fetchNotifications();
+      get().fetchUnreadCount();
     } catch (err: any) {
       // Re-throw cancellation so callers can handle it
       if (err?.message === 'SIGN_CANCELLED') throw err;
@@ -541,6 +529,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     localStorage.setItem(roleKeyFor(address), user.role);
     set({ authUser: user, userRole: user.role as UserRole, showRoleModal: false });
+    // Refresh profile now that auth is confirmed
+    await get()._refreshProfile(address);
     return user;
   },
 
@@ -773,6 +763,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         about: updatedProfile.about || undefined,
         skills: updatedProfile.skills || undefined,
         portfolio: updatedProfile.portfolio || undefined,
+        company: updatedProfile.company || undefined,
+        projectInterests: updatedProfile.projectInterests || undefined,
       });
       const merged: FreelancerProfile = {
         ...updatedProfile,
@@ -782,6 +774,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         about: updated.about || updatedProfile.about,
         skills: updated.skills || updatedProfile.skills,
         portfolio: updated.portfolio || updatedProfile.portfolio,
+        company: updated.company || updatedProfile.company,
+        projectInterests: updated.projectInterests || updatedProfile.projectInterests,
       };
       set((s) => ({
         currentUserProfile: merged,
@@ -793,6 +787,44 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch (error) {
       console.error('Save profile failed:', error);
       set({ isProcessing: false });
+    }
+  },
+
+  /** Re-fetch the logged-in user's profile from the backend, enriching with leaderboard stats */
+  _refreshProfile: async (address: string) => {
+    try {
+      const backendUser = await api.users.getByAddress(address);
+      const profile = mapBackendUserToProfile(backendUser);
+      // Enrich with leaderboard stats if available
+      const lb = get().leaderboardData.find((e) => e.address === address);
+      if (lb) {
+        profile.jobsCompleted = lb.jobsCompleted;
+        profile.rating = lb.rating;
+        profile.rank = lb.rank;
+      }
+      set({ currentUserProfile: profile });
+    } catch {
+      // User not in DB yet — build a temporary shell profile
+      if (!get().currentUserProfile || get().currentUserProfile?.address !== address) {
+        set({
+          currentUserProfile: {
+            rank: 0,
+            name: address.slice(0, 8),
+            address,
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${address}`,
+            totalEarnings: 0,
+            jobsCompleted: 0,
+            rating: 0,
+            specialty: 'Generalist',
+            badges: [],
+            about: '',
+            portfolio: [],
+            isIdVerified: false,
+            isSkillVerified: false,
+            isPortfolioVerified: false,
+          },
+        });
+      }
     }
   },
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle, RotateCcw, RefreshCw, Eye, X, Shield, FileText, ExternalLink, Wallet, ArrowRight, Ban } from 'lucide-react';
 import { useAppStore } from '../../stores/useAppStore';
 import { useWallet } from '../wallet/WalletProvider';
-import { adminResolveDisputeContractCall, adminForceRefundContractCall } from '../../lib/contracts';
+import { adminResolveDisputeContractCall, adminForceRefundContractCall, isUserCancellation } from '../../lib/contracts';
 import type { BackendDispute, BackendProject } from '../../lib/api';
 
 type ModalMode = 'resolve' | 'force-refund' | 'view' | null;
@@ -79,46 +79,38 @@ const AdminDisputes: React.FC = () => {
       setTxError('');
 
       try {
-         await adminResolveDisputeContractCall(
+         const { txId } = await adminResolveDisputeContractCall(
             project.onChainId,
             selectedDispute.milestoneNum,
             favorFreelancer,
             project.tokenType,
-            // onFinish -- wallet signed successfully
-            async (txData: any) => {
-               const txId = txData.txId || txData.txid || '';
-               setTxStatus('submitted');
-               try {
-                  // Save to backend with the real tx ID
-                  await adminResolveDispute(
-                     selectedDispute.id,
-                     resolution,
-                     txId,
-                     favorFreelancer
-                  );
-                  // Auto-close after brief success display
-                  setTimeout(() => {
-                     closeModal();
-                     fetchAdminDisputes();
-                  }, 1500);
-               } catch (e) {
-                  console.error('Backend save failed after signing:', e);
-                  setTxError(`Contract signed (tx: ${txId.slice(0, 12)}...) but backend save failed. Save this TX ID and resolve manually.`);
-                  setTxStatus('error');
-               } finally {
-                  setProcessing(false);
-               }
-            },
-            // onCancel -- user rejected wallet popup
-            () => {
-               setTxStatus('idle');
-               setTxError('Transaction cancelled by admin.');
-               setProcessing(false);
-            }
          );
+         setTxStatus('submitted');
+         try {
+            await adminResolveDispute(
+               selectedDispute.id,
+               resolution,
+               txId,
+               favorFreelancer
+            );
+            setTimeout(() => {
+               closeModal();
+               fetchAdminDisputes();
+            }, 1500);
+         } catch (e) {
+            console.error('Backend save failed after signing:', e);
+            setTxError(`Contract signed (tx: ${txId.slice(0, 12)}...) but backend save failed. Save this TX ID and resolve manually.`);
+            setTxStatus('error');
+         }
       } catch (e: any) {
-         setTxStatus('error');
-         setTxError(e?.message || 'Failed to open wallet for signing.');
+         if (isUserCancellation(e)) {
+            setTxStatus('idle');
+            setTxError('Transaction cancelled by admin.');
+         } else {
+            setTxStatus('error');
+            setTxError(e?.message || 'Failed to open wallet for signing.');
+         }
+      } finally {
          setProcessing(false);
       }
    };
@@ -141,38 +133,32 @@ const AdminDisputes: React.FC = () => {
       setTxError('');
 
       try {
-         await adminForceRefundContractCall(
+         const { txId } = await adminForceRefundContractCall(
             project.onChainId,
             project.tokenType,
-            // onFinish
-            async (txData: any) => {
-               const txId = txData.txId || txData.txid || '';
-               setTxStatus('submitted');
-               try {
-                  await adminForceRefund(project.id, txId);
-                  setTimeout(() => {
-                     closeModal();
-                     fetchAdminDisputes();
-                     fetchAdminProjects();
-                  }, 1500);
-               } catch (e) {
-                  console.error('Backend save failed after force refund:', e);
-                  setTxError(`Contract signed (tx: ${txId.slice(0, 12)}...) but backend save failed. Save this TX ID.`);
-                  setTxStatus('error');
-               } finally {
-                  setProcessing(false);
-               }
-            },
-            // onCancel
-            () => {
-               setTxStatus('idle');
-               setTxError('Transaction cancelled by admin.');
-               setProcessing(false);
-            }
          );
+         setTxStatus('submitted');
+         try {
+            await adminForceRefund(project.id, txId);
+            setTimeout(() => {
+               closeModal();
+               fetchAdminDisputes();
+               fetchAdminProjects();
+            }, 1500);
+         } catch (e) {
+            console.error('Backend save failed after force refund:', e);
+            setTxError(`Contract signed (tx: ${txId.slice(0, 12)}...) but backend save failed. Save this TX ID.`);
+            setTxStatus('error');
+         }
       } catch (e: any) {
-         setTxStatus('error');
-         setTxError(e?.message || 'Failed to open wallet for signing.');
+         if (isUserCancellation(e)) {
+            setTxStatus('idle');
+            setTxError('Transaction cancelled by admin.');
+         } else {
+            setTxStatus('error');
+            setTxError(e?.message || 'Failed to open wallet for signing.');
+         }
+      } finally {
          setProcessing(false);
       }
    };

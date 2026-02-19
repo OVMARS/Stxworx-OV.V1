@@ -113,6 +113,10 @@ export interface FreelancerProfile {
   skills?: string[];
   hourlyRate?: number;
   
+  // Client-specific fields
+  company?: string;
+  projectInterests?: string[];
+
   // Verification System
   isIdVerified?: boolean; 
   isSkillVerified?: boolean; 

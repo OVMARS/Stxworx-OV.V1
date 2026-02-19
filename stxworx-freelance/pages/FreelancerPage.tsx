@@ -5,7 +5,7 @@ import ProjectCard from '../components/ProjectCard';
 import Leaderboard from '../components/Leaderboard';
 import {
   Briefcase, Settings, Send, CheckCircle2, Clock, Play, Trophy,
-  DollarSign, Award, TrendingUp, FileText, Shield, ArrowRight, XCircle, Ban,
+  DollarSign, Award, TrendingUp, FileText, Shield, ArrowRight, XCircle, Ban, User,
 } from 'lucide-react';
 import { formatUSD, tokenToUsd } from '../services/StacksService';
 import { Proposal, ProposalStatus } from '../types';
@@ -164,6 +164,17 @@ const FreelancerPage: React.FC = () => {
             >
               <Settings className="w-3 h-3" /> Edit Profile
             </button>
+            {wallet.address && (
+              <>
+                <div className="h-4 w-px bg-slate-700" />
+                <button
+                  onClick={() => navigate(`/user/${wallet.address}`)}
+                  className="text-xs font-bold text-blue-400 hover:text-white flex items-center gap-1 transition-colors"
+                >
+                  <User className="w-3 h-3" /> View Public Profile
+                </button>
+              </>
+            )}
           </div>
         </div>
         <div className="flex gap-2 sm:gap-3">

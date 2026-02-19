@@ -63,6 +63,8 @@ export const users = mysqlTable("users", {
   about: text("about"),
   skills: json("skills").$type<string[]>(),
   portfolio: json("portfolio").$type<string[]>(),
+  company: varchar("company", { length: 150 }),
+  projectInterests: json("project_interests").$type<string[]>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -12,6 +12,8 @@ const updateProfileSchema = z.object({
   about: z.string().max(2000).optional(),
   skills: z.array(z.string()).optional(),
   portfolio: z.array(z.string().url()).optional(),
+  company: z.string().max(150).optional(),
+  projectInterests: z.array(z.string()).optional(),
 });
 
 export const userController = {
@@ -32,6 +34,8 @@ export const userController = {
           about: users.about,
           skills: users.skills,
           portfolio: users.portfolio,
+          company: users.company,
+          projectInterests: users.projectInterests,
           createdAt: users.createdAt,
         })
         .from(users)
@@ -86,6 +90,8 @@ export const userController = {
         about: updated.about,
         skills: updated.skills,
         portfolio: updated.portfolio,
+        company: updated.company,
+        projectInterests: updated.projectInterests,
       });
     } catch (error) {
       console.error("Update profile error:", error);

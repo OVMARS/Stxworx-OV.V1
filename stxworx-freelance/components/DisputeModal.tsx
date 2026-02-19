@@ -28,34 +28,28 @@ const DisputeModal: React.FC<DisputeModalProps> = ({ projectId, projectTitle, mi
     }
     setTxPending(true);
     try {
-      const { fileDisputeContractCall } = await import('../lib/contracts');
-      await fileDisputeContractCall(
-        onChainId || 1,
-        milestoneNum,
-        async (txData) => {
-          console.log('file-dispute TX sent:', txData.txId);
-          try {
-            await createDispute({
-              projectId,
-              milestoneNum,
-              reason: reason.trim(),
-              evidenceUrl: evidenceUrl.trim() || undefined,
-              disputeTxId: txData.txId,
-            });
-            onClose();
-          } catch (err: any) {
-            setError(err?.message || 'Failed to save dispute to backend.');
-          } finally {
-            setTxPending(false);
-          }
-        },
-        () => {
-          console.log('file-dispute TX cancelled');
-          setTxPending(false);
-        }
-      );
+      const { fileDisputeContractCall, isUserCancellation } = await import('../lib/contracts');
+      const { txId } = await fileDisputeContractCall(onChainId || 1, milestoneNum);
+      console.log('file-dispute TX sent:', txId);
+      try {
+        await createDispute({
+          projectId,
+          milestoneNum,
+          reason: reason.trim(),
+          evidenceUrl: evidenceUrl.trim() || undefined,
+          disputeTxId: txId,
+        });
+        onClose();
+      } catch (err: any) {
+        setError(err?.message || 'Failed to save dispute to backend.');
+      }
     } catch (err: any) {
-      setError(err?.message || 'Failed to file on-chain dispute.');
+      if ((await import('../lib/contracts')).isUserCancellation(err)) {
+        console.log('file-dispute TX cancelled');
+      } else {
+        setError(err?.message || 'Failed to file on-chain dispute.');
+      }
+    } finally {
       setTxPending(false);
     }
   };

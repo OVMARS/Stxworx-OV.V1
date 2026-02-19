@@ -1,21 +1,21 @@
 /**
  * Contract Integration Tests
  * 
- * Validates that all 5 contract call wrapper functions:
+ * Validates that all contract call wrapper functions:
  * 1. Export correctly from contracts.ts
  * 2. Accept the correct parameters
- * 3. Call openContractCall with the right function names & args
+ * 3. Call the `request` API with the right function names & args
  * 4. Wire properly through the UI components (ProjectCard, DisputeModal)
  * 
- * These tests mock @stacks/connect and verify the data flow end-to-end.
+ * These tests mock @stacks/connect `request` and verify the data flow end-to-end.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ─── Mock @stacks/connect ────────────────────────────────────────────
-const mockOpenContractCall = vi.fn();
+const mockRequest = vi.fn();
 vi.mock('@stacks/connect', () => ({
-  openContractCall: (...args: any[]) => mockOpenContractCall(...args),
+  request: (...args: any[]) => mockRequest(...args),
 }));
 
 // ─── Mock @stacks/network ────────────────────────────────────────────
@@ -30,126 +30,117 @@ import {
   releaseMilestoneContractCall,
   fileDisputeContractCall,
   requestRefundContractCall,
+  isUserCancellation,
 } from '../lib/contracts';
 
+import { Cl } from '@stacks/transactions';
 import { CONTRACT_ADDRESS, CONTRACT_NAME } from '../lib/constants';
 
 // ─── Helpers ─────────────────────────────────────────────────────────
-const noop = () => {};
-const onFinish = vi.fn();
-const onCancel = vi.fn();
+const CONTRACT_ID = `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`;
+
+/** Deserialize hex arg back to ClarityValue for inspection */
+function deserializeArg(hex: string) {
+  return Cl.deserialize(hex);
+}
 
 beforeEach(() => {
-  mockOpenContractCall.mockReset();
-  mockOpenContractCall.mockResolvedValue(undefined);
-  onFinish.mockReset();
-  onCancel.mockReset();
+  mockRequest.mockReset();
+  mockRequest.mockResolvedValue({ txid: '0xmocktxid', transaction: '0xraw' });
 });
 
 // =====================================================================
 // 1. createProjectContractCall
 // =====================================================================
 describe('createProjectContractCall', () => {
-  it('calls openContractCall with create-project-stx for STX projects', async () => {
-    await createProjectContractCall(
-      {
-        freelancerAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-        totalBudget: 100,
-        tokenType: 'STX',
-        milestones: [
-          { amount: 25 }, { amount: 25 }, { amount: 25 }, { amount: 25 },
-        ],
-      },
-      onFinish,
-      onCancel,
-    );
+  it('calls request with create-project-stx for STX projects', async () => {
+    const result = await createProjectContractCall({
+      freelancerAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
+      totalBudget: 100,
+      tokenType: 'STX',
+      milestones: [
+        { amount: 25 }, { amount: 25 }, { amount: 25 }, { amount: 25 },
+      ],
+    });
 
-    expect(mockOpenContractCall).toHaveBeenCalledTimes(1);
-    const call = mockOpenContractCall.mock.calls[0][0];
-    expect(call.contractAddress).toBe(CONTRACT_ADDRESS);
-    expect(call.contractName).toBe(CONTRACT_NAME);
-    expect(call.functionName).toBe('create-project-stx');
+    expect(result.txId).toBe('0xmocktxid');
+    expect(mockRequest).toHaveBeenCalledTimes(1);
+    const [method, params] = mockRequest.mock.calls[0];
+    expect(method).toBe('stx_callContract');
+    expect(params.contract).toBe(CONTRACT_ID);
+    expect(params.functionName).toBe('create-project-stx');
     // 5 args: freelancer principal + 4 milestone amounts
-    expect(call.functionArgs).toHaveLength(5);
-    expect(call.onFinish).toBe(onFinish);
-    expect(call.onCancel).toBe(onCancel);
+    expect(params.functionArgs).toHaveLength(5);
   });
 
-  it('calls openContractCall with create-project-sbtc for sBTC projects', async () => {
-    await createProjectContractCall(
-      {
-        freelancerAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-        totalBudget: 0.5,
-        tokenType: 'sBTC',
-        milestones: [
-          { amount: 0.125 }, { amount: 0.125 }, { amount: 0.125 }, { amount: 0.125 },
-        ],
-      },
-      onFinish,
-      onCancel,
-    );
+  it('calls request with create-project-sbtc for sBTC projects', async () => {
+    await createProjectContractCall({
+      freelancerAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
+      totalBudget: 0.5,
+      tokenType: 'sBTC',
+      milestones: [
+        { amount: 0.125 }, { amount: 0.125 }, { amount: 0.125 }, { amount: 0.125 },
+      ],
+    });
 
-    const call = mockOpenContractCall.mock.calls[0][0];
-    expect(call.functionName).toBe('create-project-sbtc');
+    const [, params] = mockRequest.mock.calls[0];
+    expect(params.functionName).toBe('create-project-sbtc');
     // 6 args: freelancer principal + 4 amounts + sbtc trait reference
-    expect(call.functionArgs).toHaveLength(6);
+    expect(params.functionArgs).toHaveLength(6);
   });
 
   it('pads milestones to 4 when fewer are provided', async () => {
-    await createProjectContractCall(
-      {
-        freelancerAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-        totalBudget: 50,
-        tokenType: 'STX',
-        milestones: [{ amount: 50 }], // only 1 milestone
-      },
-      onFinish,
-      onCancel,
-    );
+    await createProjectContractCall({
+      freelancerAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
+      totalBudget: 50,
+      tokenType: 'STX',
+      milestones: [{ amount: 50 }], // only 1 milestone
+    });
 
-    const call = mockOpenContractCall.mock.calls[0][0];
-    expect(call.functionArgs).toHaveLength(5); // still 5 (principal + 4 uint)
+    const [, params] = mockRequest.mock.calls[0];
+    expect(params.functionArgs).toHaveLength(5); // still 5 (principal + 4 uint)
   });
 
   it('converts STX amounts to micro-units (6 decimals)', async () => {
-    await createProjectContractCall(
-      {
-        freelancerAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-        totalBudget: 100,
-        tokenType: 'STX',
-        milestones: [
-          { amount: 25 }, { amount: 25 }, { amount: 25 }, { amount: 25 },
-        ],
-      },
-      onFinish,
-      onCancel,
-    );
+    await createProjectContractCall({
+      freelancerAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
+      totalBudget: 100,
+      tokenType: 'STX',
+      milestones: [
+        { amount: 25 }, { amount: 25 }, { amount: 25 }, { amount: 25 },
+      ],
+    });
 
-    const call = mockOpenContractCall.mock.calls[0][0];
-    // M1 = 25 STX -> 25_000_000 micro-STX
-    const m1Arg = call.functionArgs[1];
-    expect(m1Arg.type).toBe('uint');
-    expect(m1Arg.value).toBe(25000000n);
+    const [, params] = mockRequest.mock.calls[0];
+    const m1 = deserializeArg(params.functionArgs[1]);
+    expect(m1.type).toBe('uint');
+    expect((m1 as any).value).toBe(25000000n);
   });
 
   it('converts sBTC amounts to micro-units (8 decimals)', async () => {
-    await createProjectContractCall(
-      {
-        freelancerAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-        totalBudget: 1,
-        tokenType: 'sBTC',
-        milestones: [
-          { amount: 0.25 }, { amount: 0.25 }, { amount: 0.25 }, { amount: 0.25 },
-        ],
-      },
-      onFinish,
-      onCancel,
-    );
+    await createProjectContractCall({
+      freelancerAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
+      totalBudget: 1,
+      tokenType: 'sBTC',
+      milestones: [
+        { amount: 0.25 }, { amount: 0.25 }, { amount: 0.25 }, { amount: 0.25 },
+      ],
+    });
 
-    const call = mockOpenContractCall.mock.calls[0][0];
-    // M1 = 0.25 sBTC -> 25_000_000 sats
-    const m1Arg = call.functionArgs[1];
-    expect(m1Arg.value).toBe(25000000n);
+    const [, params] = mockRequest.mock.calls[0];
+    const m1 = deserializeArg(params.functionArgs[1]);
+    expect((m1 as any).value).toBe(25000000n);
+  });
+
+  it('returns txId from the request response', async () => {
+    mockRequest.mockResolvedValue({ txid: '0xcustom123' });
+    const result = await createProjectContractCall({
+      freelancerAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
+      totalBudget: 100,
+      tokenType: 'STX',
+      milestones: [{ amount: 25 }, { amount: 25 }, { amount: 25 }, { amount: 25 }],
+    });
+    expect(result.txId).toBe('0xcustom123');
   });
 });
 
@@ -158,25 +149,19 @@ describe('createProjectContractCall', () => {
 // =====================================================================
 describe('completeMilestoneContractCall', () => {
   it('calls complete-milestone with correct project-id and milestone-num', async () => {
-    await completeMilestoneContractCall(1, 2, onFinish, onCancel);
+    const result = await completeMilestoneContractCall(1, 2);
 
-    expect(mockOpenContractCall).toHaveBeenCalledTimes(1);
-    const call = mockOpenContractCall.mock.calls[0][0];
-    expect(call.contractAddress).toBe(CONTRACT_ADDRESS);
-    expect(call.contractName).toBe(CONTRACT_NAME);
-    expect(call.functionName).toBe('complete-milestone');
-    expect(call.functionArgs).toHaveLength(2);
-    // project-id = 1, milestone-num = 2
-    expect(call.functionArgs[0].value).toBe(1n);
-    expect(call.functionArgs[1].value).toBe(2n);
-  });
-
-  it('passes onFinish and onCancel callbacks', async () => {
-    await completeMilestoneContractCall(5, 3, onFinish, onCancel);
-
-    const call = mockOpenContractCall.mock.calls[0][0];
-    expect(call.onFinish).toBe(onFinish);
-    expect(call.onCancel).toBe(onCancel);
+    expect(result.txId).toBe('0xmocktxid');
+    expect(mockRequest).toHaveBeenCalledTimes(1);
+    const [method, params] = mockRequest.mock.calls[0];
+    expect(method).toBe('stx_callContract');
+    expect(params.contract).toBe(CONTRACT_ID);
+    expect(params.functionName).toBe('complete-milestone');
+    expect(params.functionArgs).toHaveLength(2);
+    const arg0 = deserializeArg(params.functionArgs[0]);
+    const arg1 = deserializeArg(params.functionArgs[1]);
+    expect((arg0 as any).value).toBe(1n);
+    expect((arg1 as any).value).toBe(2n);
   });
 });
 
@@ -185,23 +170,27 @@ describe('completeMilestoneContractCall', () => {
 // =====================================================================
 describe('releaseMilestoneContractCall', () => {
   it('calls release-milestone-stx for STX projects', async () => {
-    await releaseMilestoneContractCall(1, 1, 'STX', onFinish, onCancel);
+    await releaseMilestoneContractCall(1, 1, 'STX');
 
-    const call = mockOpenContractCall.mock.calls[0][0];
-    expect(call.functionName).toBe('release-milestone-stx');
-    expect(call.functionArgs).toHaveLength(2); // project-id + milestone-num
-    expect(call.functionArgs[0].value).toBe(1n);
-    expect(call.functionArgs[1].value).toBe(1n);
+    const [, params] = mockRequest.mock.calls[0];
+    expect(params.functionName).toBe('release-milestone-stx');
+    expect(params.functionArgs).toHaveLength(2);
+    const arg0 = deserializeArg(params.functionArgs[0]);
+    const arg1 = deserializeArg(params.functionArgs[1]);
+    expect((arg0 as any).value).toBe(1n);
+    expect((arg1 as any).value).toBe(1n);
   });
 
   it('calls release-milestone-sbtc for sBTC projects with trait arg', async () => {
-    await releaseMilestoneContractCall(2, 3, 'sBTC', onFinish, onCancel);
+    await releaseMilestoneContractCall(2, 3, 'sBTC');
 
-    const call = mockOpenContractCall.mock.calls[0][0];
-    expect(call.functionName).toBe('release-milestone-sbtc');
-    expect(call.functionArgs).toHaveLength(3); // project-id + milestone-num + trait
-    expect(call.functionArgs[0].value).toBe(2n);
-    expect(call.functionArgs[1].value).toBe(3n);
+    const [, params] = mockRequest.mock.calls[0];
+    expect(params.functionName).toBe('release-milestone-sbtc');
+    expect(params.functionArgs).toHaveLength(3);
+    const arg0 = deserializeArg(params.functionArgs[0]);
+    const arg1 = deserializeArg(params.functionArgs[1]);
+    expect((arg0 as any).value).toBe(2n);
+    expect((arg1 as any).value).toBe(3n);
   });
 });
 
@@ -210,21 +199,22 @@ describe('releaseMilestoneContractCall', () => {
 // =====================================================================
 describe('fileDisputeContractCall', () => {
   it('calls file-dispute with project-id and milestone-num', async () => {
-    await fileDisputeContractCall(3, 2, onFinish, onCancel);
+    await fileDisputeContractCall(3, 2);
 
-    const call = mockOpenContractCall.mock.calls[0][0];
-    expect(call.functionName).toBe('file-dispute');
-    expect(call.functionArgs).toHaveLength(2);
-    expect(call.functionArgs[0].value).toBe(3n);
-    expect(call.functionArgs[1].value).toBe(2n);
+    const [, params] = mockRequest.mock.calls[0];
+    expect(params.functionName).toBe('file-dispute');
+    expect(params.functionArgs).toHaveLength(2);
+    const arg0 = deserializeArg(params.functionArgs[0]);
+    const arg1 = deserializeArg(params.functionArgs[1]);
+    expect((arg0 as any).value).toBe(3n);
+    expect((arg1 as any).value).toBe(2n);
   });
 
-  it('uses correct contract address/name', async () => {
-    await fileDisputeContractCall(1, 1, onFinish, onCancel);
+  it('uses correct contract', async () => {
+    await fileDisputeContractCall(1, 1);
 
-    const call = mockOpenContractCall.mock.calls[0][0];
-    expect(call.contractAddress).toBe(CONTRACT_ADDRESS);
-    expect(call.contractName).toBe(CONTRACT_NAME);
+    const [, params] = mockRequest.mock.calls[0];
+    expect(params.contract).toBe(CONTRACT_ID);
   });
 });
 
@@ -233,54 +223,92 @@ describe('fileDisputeContractCall', () => {
 // =====================================================================
 describe('requestRefundContractCall', () => {
   it('calls request-full-refund-stx for STX projects', async () => {
-    await requestRefundContractCall(1, 'STX', onFinish, onCancel);
+    await requestRefundContractCall(1, 'STX');
 
-    const call = mockOpenContractCall.mock.calls[0][0];
-    expect(call.functionName).toBe('request-full-refund-stx');
-    expect(call.functionArgs).toHaveLength(1); // only project-id
-    expect(call.functionArgs[0].value).toBe(1n);
+    const [, params] = mockRequest.mock.calls[0];
+    expect(params.functionName).toBe('request-full-refund-stx');
+    expect(params.functionArgs).toHaveLength(1);
+    const arg0 = deserializeArg(params.functionArgs[0]);
+    expect((arg0 as any).value).toBe(1n);
   });
 
   it('calls request-full-refund-sbtc with trait arg for sBTC', async () => {
-    await requestRefundContractCall(2, 'sBTC', onFinish, onCancel);
+    await requestRefundContractCall(2, 'sBTC');
 
-    const call = mockOpenContractCall.mock.calls[0][0];
-    expect(call.functionName).toBe('request-full-refund-sbtc');
-    expect(call.functionArgs).toHaveLength(2); // project-id + trait
-    expect(call.functionArgs[0].value).toBe(2n);
-  });
-
-  it('passes onFinish and onCancel callbacks', async () => {
-    await requestRefundContractCall(1, 'STX', onFinish, onCancel);
-
-    const call = mockOpenContractCall.mock.calls[0][0];
-    expect(call.onFinish).toBe(onFinish);
-    expect(call.onCancel).toBe(onCancel);
+    const [, params] = mockRequest.mock.calls[0];
+    expect(params.functionName).toBe('request-full-refund-sbtc');
+    expect(params.functionArgs).toHaveLength(2);
+    const arg0 = deserializeArg(params.functionArgs[0]);
+    expect((arg0 as any).value).toBe(2n);
   });
 });
 
 // =====================================================================
-// 6. Cross-cutting: PostConditionMode and AppDetails
+// 6. Cross-cutting: PostConditionMode and network
 // =====================================================================
 describe('Cross-cutting contract call config', () => {
   it.each([
-    ['completeMilestoneContractCall', () => completeMilestoneContractCall(1, 1, noop, noop)],
-    ['releaseMilestoneContractCall', () => releaseMilestoneContractCall(1, 1, 'STX', noop, noop)],
-    ['fileDisputeContractCall', () => fileDisputeContractCall(1, 1, noop, noop)],
-    ['requestRefundContractCall', () => requestRefundContractCall(1, 'STX', noop, noop)],
-  ] as const)('%s uses PostConditionMode.Allow', async (_name, fn) => {
+    ['completeMilestoneContractCall', () => completeMilestoneContractCall(1, 1)],
+    ['releaseMilestoneContractCall', () => releaseMilestoneContractCall(1, 1, 'STX')],
+    ['fileDisputeContractCall', () => fileDisputeContractCall(1, 1)],
+    ['requestRefundContractCall', () => requestRefundContractCall(1, 'STX')],
+  ] as const)('%s uses postConditionMode "allow"', async (_name, fn) => {
     await fn();
-    const call = mockOpenContractCall.mock.calls[0][0];
-    expect(call.postConditionMode).toBe(1); // PostConditionMode.Allow = 1
+    const [, params] = mockRequest.mock.calls[0];
+    expect(params.postConditionMode).toBe('allow');
+  });
+
+  it('uses the correct network', async () => {
+    await completeMilestoneContractCall(1, 1);
+    const [, params] = mockRequest.mock.calls[0];
+    expect(params.network).toBe('testnet');
   });
 });
 
 // =====================================================================
-// 7. Data flow integration: ProjectCard -> store -> API
+// 7. isUserCancellation utility
+// =====================================================================
+describe('isUserCancellation', () => {
+  it('returns true for code 4001', () => {
+    expect(isUserCancellation({ code: 4001, message: 'User rejected' })).toBe(true);
+  });
+
+  it('returns true for cancel message', () => {
+    expect(isUserCancellation(new Error('User cancelled the request'))).toBe(true);
+  });
+
+  it('returns true for denied message', () => {
+    expect(isUserCancellation(new Error('Request denied by user'))).toBe(true);
+  });
+
+  it('returns false for a real error', () => {
+    expect(isUserCancellation(new Error('Network timeout'))).toBe(false);
+  });
+
+  it('returns false for null/undefined', () => {
+    expect(isUserCancellation(null)).toBe(false);
+    expect(isUserCancellation(undefined)).toBe(false);
+  });
+});
+
+// =====================================================================
+// 8. Wallet rejection handling
+// =====================================================================
+describe('Wallet rejection propagates as error', () => {
+  it('rejects when wallet returns error', async () => {
+    mockRequest.mockRejectedValue({ code: 4001, message: 'User denied' });
+
+    await expect(completeMilestoneContractCall(1, 1)).rejects.toEqual(
+      expect.objectContaining({ code: 4001 }),
+    );
+  });
+});
+
+// =====================================================================
+// 9. Data flow integration: ProjectCard -> store -> API
 // =====================================================================
 describe('Data flow: ProjectCard contract-to-backend payload mapping', () => {
   it('maps freelancer submit to correct store payload shape', () => {
-    // Simulates what handleFreelancerSubmit constructs in ProjectCard MilestoneItem
     const txData = { txId: '0xabc123' };
     const milestoneId = 2;
     const submissionLink = 'https://github.com/repo/pr/1';
@@ -291,7 +319,6 @@ describe('Data flow: ProjectCard contract-to-backend payload mapping', () => {
       completionTxId: txData.txId,
     };
 
-    // Verify shape matches what handleProjectAction('submit_milestone') expects
     expect(payload).toHaveProperty('milestoneId');
     expect(payload).toHaveProperty('link');
     expect(payload).toHaveProperty('completionTxId');
@@ -299,7 +326,6 @@ describe('Data flow: ProjectCard contract-to-backend payload mapping', () => {
   });
 
   it('maps client approve to correct store payload shape', () => {
-    // Simulates what handleClientApprove constructs in ProjectCard MilestoneItem
     const txData = { txId: '0xdef456' };
     const submissionId = 42;
     const milestoneId = 1;
@@ -310,7 +336,6 @@ describe('Data flow: ProjectCard contract-to-backend payload mapping', () => {
       releaseTxId: txData.txId,
     };
 
-    // Verify shape matches what handleProjectAction('approve_milestone') expects
     expect(payload).toHaveProperty('submissionId');
     expect(payload).toHaveProperty('milestoneId');
     expect(payload).toHaveProperty('releaseTxId');
@@ -318,7 +343,6 @@ describe('Data flow: ProjectCard contract-to-backend payload mapping', () => {
   });
 
   it('maps dispute to correct createDispute payload shape', () => {
-    // Simulates what DisputeModal handleSubmit constructs
     const txData = { txId: '0xghi789' };
     const projectId = 5;
     const milestoneNum = 3;
@@ -331,7 +355,6 @@ describe('Data flow: ProjectCard contract-to-backend payload mapping', () => {
       disputeTxId: txData.txId,
     };
 
-    // Verify shape matches api.disputes.create parameter
     expect(payload).toHaveProperty('projectId');
     expect(payload).toHaveProperty('milestoneNum');
     expect(payload).toHaveProperty('reason');
@@ -341,7 +364,7 @@ describe('Data flow: ProjectCard contract-to-backend payload mapping', () => {
 });
 
 // =====================================================================
-// 8. Type/export verification
+// 10. Module exports
 // =====================================================================
 describe('Module exports', () => {
   it('exports all 5 contract call functions', () => {
@@ -351,10 +374,14 @@ describe('Module exports', () => {
     expect(typeof fileDisputeContractCall).toBe('function');
     expect(typeof requestRefundContractCall).toBe('function');
   });
+
+  it('exports isUserCancellation utility', () => {
+    expect(typeof isUserCancellation).toBe('function');
+  });
 });
 
 // =====================================================================
-// 9. onChainId mapping verification
+// 11. onChainId mapping verification
 // =====================================================================
 describe('onChainId flow', () => {
   it('maps from BackendProject correctly via mapBackendProject', async () => {

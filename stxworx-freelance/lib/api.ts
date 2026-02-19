@@ -40,6 +40,8 @@ export interface BackendUser {
   about?: string | null;
   skills?: string[] | null;
   portfolio?: string[] | null;
+  company?: string | null;
+  projectInterests?: string[] | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -254,6 +256,8 @@ export function mapBackendUserToProfile(u: BackendUser): FreelancerProfile {
     portfolio: u.portfolio || [],
     skills: u.skills || [],
     hourlyRate: u.hourlyRate ? parseFloat(u.hourlyRate) : undefined,
+    company: u.company || undefined,
+    projectInterests: u.projectInterests || [],
     isIdVerified: false,
     isSkillVerified: false,
     isPortfolioVerified: false,
@@ -302,6 +306,8 @@ export const api = {
       about?: string;
       skills?: string[];
       portfolio?: string[];
+      company?: string;
+      projectInterests?: string[];
     }) =>
       request<BackendUser>('/users/me', {
         method: 'PATCH',
