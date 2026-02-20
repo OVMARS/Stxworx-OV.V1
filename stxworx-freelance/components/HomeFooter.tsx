@@ -1,12 +1,21 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Twitter, Github, Globe } from 'lucide-react';
+import { Globe, Twitter } from 'lucide-react';
+
 import STXWORXLogo from '../../assets/STXWORX_LOGO_FINAL_3d_cropped.png';
 
-const socialLinks = [
+const socialLinks: Array<{
+  Icon: React.ComponentType<{ className?: string }>;
+  href: string;
+  label: string;
+}> = [
   { Icon: Twitter, href: 'https://x.com/STXWORX', label: 'STXWORX on X' },
   { Icon: Globe, href: 'https://gowhite.xyz/', label: 'GoWhite Website' },
 ];
+
+const socialIconClass =
+  'w-10 h-10 rounded-lg bg-[#0b0f19] flex items-center justify-center text-slate-400 hover:text-white hover:bg-orange-600 transition-all border border-white/10';
+
 const HomeFooter: React.FC = () => {
   const navigate = useNavigate();
 

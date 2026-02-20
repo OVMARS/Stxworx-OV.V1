@@ -19,14 +19,24 @@ const HomePage: React.FC = () => {
   const { currentBlock, categories = [] } = useAppStore();
 
 
-
   const fallbackCategories = [
     { icon: 'Palette', name: 'Creative & Design', subcategories: ['NFTs', 'UI/UX'] },
     { icon: 'Code', name: 'Development', subcategories: ['Clarity', 'React', 'Rust'] },
     { icon: 'Film', name: 'Media & Content', subcategories: ['Video', 'Technical Writing'] },
     { icon: 'Users', name: 'Community', subcategories: ['Moderation', 'Growth'] },
   ];
-  const displayCategories = categories.length > 0 ? categories : fallbackCategories;
+
+  const normalizedCategories = (Array.isArray(categories) ? categories : [])
+    .filter((category) => category && typeof category === 'object')
+    .map((category: any) => ({
+      icon: typeof category.icon === 'string' ? category.icon : 'Code',
+      name: typeof category.name === 'string' ? category.name : 'Untitled Category',
+      subcategories: Array.isArray(category.subcategories)
+        ? category.subcategories.filter((item: unknown): item is string => typeof item === 'string')
+        : [],
+    }));
+
+  const displayCategories = normalizedCategories.length > 0 ? normalizedCategories : fallbackCategories;
 
   return (
     <div className="relative font-sans text-slate-200 overflow-x-hidden w-full max-w-[100vw]">
