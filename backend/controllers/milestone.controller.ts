@@ -128,20 +128,6 @@ export const milestoneController = {
         await projectService.update(project.id, { status: "completed" });
       }
 
-      // Update freelancer earnings
-      if (submission.freelancerId) {
-        const milestoneAmount = getMilestoneAmount(project, submission.milestoneNum);
-        if (milestoneAmount > 0) {
-          await db
-            .update(users)
-            .set({
-              totalEarned: sql`${users.totalEarned} + ${String(milestoneAmount)}`,
-              updatedAt: new Date(),
-            })
-            .where(eq(users.id, submission.freelancerId));
-        }
-      }
-
       // Update freelancer earnings — add this milestone's amount
       if (submission.freelancerId) {
         try {
