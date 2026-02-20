@@ -28,7 +28,7 @@ export function log(message: string, source = "express") {
 export async function setupVite(app: Express, server: Server) {
   // Dynamic imports - only load Vite in development mode
   const { createServer: createViteServer, createLogger } = await import("vite");
-  const viteConfig = (await import("../frontend/vite.config")).default;
+  const viteConfig = (await import("../stxworx-freelance/vite.config")).default;
   const viteLogger = createLogger();
 
   const serverOptions = {

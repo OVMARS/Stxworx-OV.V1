@@ -180,10 +180,10 @@ You should see a success message confirming the database is reachable.
 
 ## 4. Frontend Environment Variables
 
-Create a `.env.local` file inside the `frontend/` directory:
+Create a `.env.local` file inside the `stxworx-freelance/` directory:
 
 ```bash
-touch frontend/.env.local
+touch stxworx-freelance/.env.local
 ```
 
 Add the following:
@@ -322,7 +322,7 @@ STX-WORX-COPY/
 │   ├── controllers/            # Business logic
 │   └── services/               # Service layer
 │
-├── frontend/           # React frontend (Vite)
+├── stxworx-freelance/           # React frontend (Vite)
 │   ├── index.html              # HTML entry point
 │   ├── index.tsx               # React entry point
 │   ├── App.tsx                 # Root React component
@@ -384,7 +384,7 @@ STX-WORX-COPY/
 | `npm run test:watch` | Run tests in watch mode |
 | `npm run test:fuzz` | Run fuzz tests (500 runs) |
 
-### Frontend (`frontend/`)
+### Frontend (`stxworx-freelance/`)
 
 | Command | Description |
 |---------|-------------|
@@ -446,7 +446,7 @@ Error: listen EADDRINUSE :::5001
 If you see `504 Outdated Optimize Dep` or stale module errors:
 
 ```bash
-rm -rf frontend/node_modules/.vite
+rm -rf stxworx-freelance/node_modules/.vite
 # Restart the frontend dev server
 ```
 
@@ -481,10 +481,10 @@ npm test          # Then run tests
 [ ] Created `stx_freelance` database
 [ ] Created root `.env` with DATABASE_URL
 [ ] Ran `npm install` (root)
-[ ] Ran `npm install` (frontend/)
+[ ] Ran `npm install` (stxworx-freelance/)
 [ ] Ran `npm install` (smart-contracts/)
 [ ] Ran `npm run db:setup` (schema + seed)
-[ ] Created `frontend/.env.local`
+[ ] Created `stxworx-freelance/.env.local`
 [ ] Started backend: `npm run dev`
 [ ] Started frontend: `cd frontend && npm run dev`
 [ ] Installed Hiro Wallet and switched to Testnet

@@ -7,7 +7,7 @@
     "dev": "cross-env NODE_ENV=development tsx --env-file=.env backend/index.ts",
     "preinstall": "chmod -R 755 node_modules/ 2>/dev/null || true",
     "postinstall": "chmod -R 755 node_modules/.bin/ 2>/dev/null || true",
-    "build": "vite build --config frontend/vite.config.ts && esbuild backend/index.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/backend/index.cjs",
+    "build": "vite build --config stxworx-freelance/vite.config.ts && esbuild backend/index.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/backend/index.cjs",
     "start": "cross-env NODE_ENV=production node dist/backend/index.cjs",
     "check": "tsc",
     "db:push": "drizzle-kit push --config=backend/drizzle.config.ts",
