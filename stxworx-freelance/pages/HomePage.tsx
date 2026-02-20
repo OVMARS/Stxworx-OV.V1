@@ -215,7 +215,6 @@ const HomePage: React.FC = () => {
       </div>
 
       <HomeFooter />
-
     </div>
   );
 };

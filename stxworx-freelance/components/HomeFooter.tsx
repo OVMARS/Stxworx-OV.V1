@@ -57,13 +57,7 @@ const HomeFooter: React.FC = () => {
                   aria-label={label}
                   target="_blank"
                   rel="noopener noreferrer"
-
-              {[Twitter, Github, Globe].map((Icon, index) => (
-                <a
-                  key={index}
-                  href="#"
-
-                  className="w-10 h-10 rounded-lg bg-[#0b0f19] flex items-center justify-center text-slate-400 hover:text-white hover:bg-orange-600 transition-all border border-white/10"
+                  className={socialIconClass}
                 >
                   <Icon className="w-4 h-4" />
                 </a>
