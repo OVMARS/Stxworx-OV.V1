@@ -214,7 +214,6 @@ const HomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Footer */}
       <HomeFooter />
     </div>
   );

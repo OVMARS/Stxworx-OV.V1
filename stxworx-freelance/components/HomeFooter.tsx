@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Globe, Hexagon, Twitter } from 'lucide-react';
+import { Globe, Twitter } from 'lucide-react';
+
+import STXWORXLogo from '../../assets/STXWORX_LOGO_FINAL_3d_cropped.png';
 
 const socialLinks = [
   { Icon: Twitter, href: 'https://x.com/STXWORX', label: 'STXWORX on X' },
@@ -13,14 +15,16 @@ const HomeFooter: React.FC = () => {
   return (
     <footer className="bg-[#020617] border-t border-white/5 pt-10 sm:pt-14 md:pt-20 pb-8 sm:pb-10 relative overflow-hidden">
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[600px] h-[300px] bg-orange-600/5 rounded-full blur-[100px] pointer-events-none" />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 md:gap-12 mb-10 sm:mb-14 md:mb-20">
           <div className="col-span-2 sm:col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2 mb-4 sm:mb-6">
-              <Hexagon className="h-8 w-8 text-orange-600 fill-orange-600/20" />
-              <span className="text-2xl font-black text-white tracking-tighter">
-                STX<span className="text-orange-600">WORX</span>
-              </span>
+            <div className="flex items-center mb-4 sm:mb-6">
+              <img
+                src={STXWORXLogo}
+                alt="STXWORX"
+                className="h-[70px] sm:h-[82px] w-auto object-contain drop-shadow-[0_0_12px_rgba(249,115,22,0.25)]"
+              />
             </div>
             <div className="text-[10px] font-bold text-slate-500 mb-4 tracking-widest uppercase">Power by $STX & $BTC</div>
             <p className="text-slate-500 text-sm leading-relaxed">The decentralized labor layer for the Bitcoin economy.</p>
