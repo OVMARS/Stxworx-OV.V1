@@ -4,7 +4,7 @@ import { useAppStore } from '../stores/useAppStore';
 import * as LucideIcons from 'lucide-react';
 import {
   ShieldCheck, Zap, Layers, ArrowRight, Lock, Check, TrendingUp,
-  Users, Hexagon, Twitter, Github, Globe, Code, Palette, Film,
+  Users, Hexagon, Twitter, Globe, Code, Palette, Film,
 } from 'lucide-react';
 
 /** Map a Lucide icon name string (e.g. 'Code') to its component */
@@ -247,8 +247,18 @@ const HomePage: React.FC = () => {
             <div>
               <h4 className="text-white font-bold uppercase tracking-wider text-xs mb-6 border-b border-orange-500/30 inline-block pb-1">Connect</h4>
               <div className="flex gap-4">
-                {[Twitter, Github, Globe].map((Icon, i) => (
-                  <a key={i} href="#" className="w-10 h-10 rounded-lg bg-[#0b0f19] flex items-center justify-center text-slate-400 hover:text-white hover:bg-orange-600 transition-all border border-white/10">
+                {[
+                  { Icon: Twitter, href: 'https://x.com/STXWORX', label: 'STXWORX on X' },
+                  { Icon: Globe, href: 'https://gowhite.xyz/', label: 'GoWhite Website' },
+                ].map(({ Icon, href, label }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    aria-label={label}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-lg bg-[#0b0f19] flex items-center justify-center text-slate-400 hover:text-white hover:bg-orange-600 transition-all border border-white/10"
+                  >
                     <Icon className="w-4 h-4" />
                   </a>
                 ))}
