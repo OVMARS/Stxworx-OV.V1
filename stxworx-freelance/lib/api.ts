@@ -237,6 +237,7 @@ export function mapBackendProject(bp: BackendProject): Project {
     milestones,
     status: bp.status,
     onChainId: bp.onChainId ?? null,
+    escrowTxId: bp.escrowTxId ?? null,
   };
 }
 
