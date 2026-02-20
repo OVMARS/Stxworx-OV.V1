@@ -17,6 +17,11 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { currentBlock, categories } = useAppStore();
 
+  const socialLinks = [
+    { Icon: Twitter, href: 'https://x.com/STXWORX', label: 'STXWORX on X' },
+    { Icon: Globe, href: 'https://gowhite.xyz/', label: 'GoWhite Website' },
+  ];
+
   const fallbackCategories = [
     { icon: 'Palette', name: 'Creative & Design', subcategories: ['NFTs', 'UI/UX'] },
     { icon: 'Code', name: 'Development', subcategories: ['Clarity', 'React', 'Rust'] },
@@ -247,10 +252,7 @@ const HomePage: React.FC = () => {
             <div>
               <h4 className="text-white font-bold uppercase tracking-wider text-xs mb-6 border-b border-orange-500/30 inline-block pb-1">Connect</h4>
               <div className="flex gap-4">
-                {[
-                  { Icon: Twitter, href: 'https://x.com/STXWORX', label: 'STXWORX on X' },
-                  { Icon: Globe, href: 'https://gowhite.xyz/', label: 'GoWhite Website' },
-                ].map(({ Icon, href, label }) => (
+                {socialLinks.map(({ Icon, href, label }) => (
                   <a
                     key={label}
                     href={href}
