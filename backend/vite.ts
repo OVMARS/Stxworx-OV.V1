@@ -28,7 +28,7 @@ export function log(message: string, source = "express") {
 export async function setupVite(app: Express, server: Server) {
   // Dynamic imports - only load Vite in development mode
   const { createServer: createViteServer, createLogger } = await import("vite");
-  const viteConfig = (await import("../frontend/vite.config")).default;
+  const viteConfig = (await import("../stxworx-freelance/vite.config")).default;
   const viteLogger = createLogger();
 
   const serverOptions = {
@@ -39,7 +39,7 @@ export async function setupVite(app: Express, server: Server) {
 
   const vite = await createViteServer({
     ...viteConfig,
-    root: path.resolve(_currentDir, "..", "frontend"),
+    root: path.resolve(_currentDir, "..", "stxworx-freelance"),
     configFile: false,
     customLogger: {
       ...viteLogger,
@@ -60,7 +60,7 @@ export async function setupVite(app: Express, server: Server) {
       const clientTemplate = path.resolve(
         __dirname,
         "..",
-        "frontend",
+        "stxworx-freelance",
         "index.html",
       );
 

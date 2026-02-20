@@ -462,7 +462,7 @@ clarinet console         # Start interactive console
 clarinet deployments apply --manifest ./deployments/default.testnet-plan.yaml  # Deploy to testnet
 ```
 
-> **Workspace note:** the frontend source directory in this repository is `frontend/` (this is the expected path for current build/dev scripts).
+> **Workspace note:** the frontend source directory in this repository is `stxworx-freelance/` (this is the expected path for current build/dev scripts).
 
 ---
 

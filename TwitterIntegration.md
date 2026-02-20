@@ -114,11 +114,11 @@ ALTER TABLE users
 
 | File | What Changes |
 |------|-------------|
-| `frontend/lib/api.ts` | Add twitter fields to `BackendUser` type + update `mapBackendUserToProfile` |
-| `frontend/services/StacksService.ts` | Replace mock `connectX()` with real redirect to `/api/auth/twitter` |
-| `frontend/stores/useAppStore.ts` | `handleConnectX` triggers the redirect instead of awaiting a fake username |
-| `frontend/pages/EditProfilePage.tsx` | On mount, check `?twitter=connected` URL param → refresh profile from DB |
-| `frontend/types.ts` | Add `twitterUsername?: string` to `FreelancerProfile` |
+| `stxworx-freelance/lib/api.ts` | Add twitter fields to `BackendUser` type + update `mapBackendUserToProfile` |
+| `stxworx-freelance/services/StacksService.ts` | Replace mock `connectX()` with real redirect to `/api/auth/twitter` |
+| `stxworx-freelance/stores/useAppStore.ts` | `handleConnectX` triggers the redirect instead of awaiting a fake username |
+| `stxworx-freelance/pages/EditProfilePage.tsx` | On mount, check `?twitter=connected` URL param → refresh profile from DB |
+| `stxworx-freelance/types.ts` | Add `twitterUsername?: string` to `FreelancerProfile` |
 
 ### Config
 

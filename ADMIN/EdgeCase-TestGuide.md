@@ -9,7 +9,7 @@
 ## Prerequisites
 
 1. **Backend running** — `cd backend && npm run dev` (port 5001)
-2. **Frontend running** — `cd frontend && npm run dev` (port 3000)
+2. **Frontend running** — `cd stxworx-freelance && npm run dev` (port 3000)
 3. **MySQL running** — with `DECIMAL(18,8)` migration already applied
 4. **Hiro Wallet installed** — connected to Stacks testnet
 5. **Admin account** — login at `/admin` with admin credentials
@@ -239,7 +239,7 @@
 ### Pre-Deploy
 
 - [ ] `npx tsc --noEmit` — zero errors
-- [ ] `npx vite build frontend` — builds successfully
+- [ ] `npx vite build stxworx-freelance` — builds successfully
 - [ ] Backend starts without errors
 - [ ] All API endpoints return correct data (test with Postman / Testing-endpoints.md)
 - [ ] Admin login/logout works
