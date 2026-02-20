@@ -39,7 +39,7 @@ export async function setupVite(app: Express, server: Server) {
 
   const vite = await createViteServer({
     ...viteConfig,
-    root: path.resolve(_currentDir, "..", "stxworx-freelance"),
+    root: path.resolve(_currentDir, "..", "frontend"),
     configFile: false,
     customLogger: {
       ...viteLogger,
@@ -60,7 +60,7 @@ export async function setupVite(app: Express, server: Server) {
       const clientTemplate = path.resolve(
         __dirname,
         "..",
-        "stxworx-freelance",
+        "frontend",
         "index.html",
       );
 

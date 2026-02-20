@@ -70,7 +70,7 @@ The project has three separate `package.json` files. Install all dependencies:
 npm install
 
 # Frontend dependencies
-cd stxworx-freelance
+cd frontend
 npm install
 cd ..
 
@@ -211,7 +211,7 @@ This starts the Express backend on port **5001** using `tsx` with hot reload.
 Then in a **separate terminal**, start the frontend:
 
 ```bash
-cd stxworx-freelance
+cd frontend
 npm run dev
 ```
 
@@ -220,7 +220,7 @@ This starts the Vite dev server on port **3000**.
 ### Option B: Frontend Only (if backend is already running)
 
 ```bash
-cd stxworx-freelance
+cd frontend
 npm run dev
 ```
 
@@ -486,7 +486,7 @@ npm test          # Then run tests
 [ ] Ran `npm run db:setup` (schema + seed)
 [ ] Created `stxworx-freelance/.env.local`
 [ ] Started backend: `npm run dev`
-[ ] Started frontend: `cd stxworx-freelance && npm run dev`
+[ ] Started frontend: `cd frontend && npm run dev`
 [ ] Installed Hiro Wallet and switched to Testnet
 [ ] Opened http://localhost:3000
 ```
