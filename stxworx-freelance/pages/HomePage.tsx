@@ -16,7 +16,8 @@ const getIcon = (name: string): React.ReactNode => {
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { currentBlock, categories } = useAppStore();
+  const { currentBlock, categories = [] } = useAppStore();
+
 
 
   const fallbackCategories = [
