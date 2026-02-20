@@ -1,9 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Twitter, Github, Globe } from 'lucide-react';
-
 import STXWORXLogo from '../../assets/STXWORX_LOGO_FINAL_3d_cropped.png';
 
+const socialLinks = [
+  { Icon: Twitter, href: 'https://x.com/STXWORX', label: 'STXWORX on X' },
+  { Icon: Globe, href: 'https://gowhite.xyz/', label: 'GoWhite Website' },
+];
 const HomeFooter: React.FC = () => {
   const navigate = useNavigate();
 
@@ -47,10 +50,19 @@ const HomeFooter: React.FC = () => {
           <div>
             <h4 className="text-white font-bold uppercase tracking-wider text-xs mb-6 border-b border-orange-500/30 inline-block pb-1">Connect</h4>
             <div className="flex gap-4">
+              {socialLinks.map(({ Icon, href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  aria-label={label}
+                  target="_blank"
+                  rel="noopener noreferrer"
+
               {[Twitter, Github, Globe].map((Icon, index) => (
                 <a
                   key={index}
                   href="#"
+
                   className="w-10 h-10 rounded-lg bg-[#0b0f19] flex items-center justify-center text-slate-400 hover:text-white hover:bg-orange-600 transition-all border border-white/10"
                 >
                   <Icon className="w-4 h-4" />

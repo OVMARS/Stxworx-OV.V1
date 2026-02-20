@@ -18,6 +18,7 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { currentBlock, categories } = useAppStore();
 
+
   const fallbackCategories = [
     { icon: 'Palette', name: 'Creative & Design', subcategories: ['NFTs', 'UI/UX'] },
     { icon: 'Code', name: 'Development', subcategories: ['Clarity', 'React', 'Rust'] },
