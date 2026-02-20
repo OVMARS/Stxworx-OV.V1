@@ -96,7 +96,9 @@ export interface Project {
   attachments?: string[];
   status?: 'open' | 'active' | 'completed' | 'disputed' | 'cancelled' | 'refunded';
   onChainId?: number | null;
+  escrowTxId?: string | null;
 }
+
 
 export interface FreelancerProfile {
   rank: number;

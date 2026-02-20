@@ -43,7 +43,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
       const msubs = submissions.filter(s => s.milestoneNum === m.id);
       if (msubs.length === 0) return m;
       // Find latest submission
-      const latest = msubs.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())[0];
+      const latest = [...msubs].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())[0];
       let status = m.status;
       if (latest.status === 'approved') status = 'approved';
       else if (latest.status === 'submitted') status = 'submitted';
@@ -53,7 +53,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
   }, [project.milestones, submissions]);
 
   const completedMilestones = enrichedMilestones.filter(m => m.status === 'approved').length;
-  const progress = (completedMilestones / 4) * 100;
+  const progress = enrichedMilestones.length
+    ? (completedMilestones / enrichedMilestones.length) * 100
+    : 0;
 
   const usdValue = tokenToUsd(project.totalBudget, project.tokenType);
 
@@ -105,6 +107,23 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, role, onAction, isPr
             <Calendar className="h-3 w-3 text-orange-500" />
             <span>{new Date(project.createdAt).toLocaleDateString()}</span>
           </div>
+          {project.isFunded && project.onChainId != null && (
+            <div className="flex items-center gap-2">
+              <Shield className="h-3 w-3 text-orange-500" />
+              <span>Escrow #{project.onChainId}</span>
+            </div>
+          )}
+          {project.isFunded && project.escrowTxId && (
+            <a
+              href={`https://explorer.hiro.so/txid/${project.escrowTxId}?chain=testnet`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 text-orange-400 hover:text-orange-300"
+            >
+              <ArrowUpRight className="h-3 w-3" />
+              <span>View Escrow Tx</span>
+            </a>
+          )}
         </div>
 
         {/* 4-Stage Visualizer */}
@@ -235,7 +254,7 @@ const MilestoneItem: React.FC<{
 
   // Get the latest submission for this milestone
   const latestSubmission = submissions.length > 0
-    ? submissions.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())[0]
+    ? [...submissions].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())[0]
     : null;
 
   const handleFreelancerSubmit = async () => {
