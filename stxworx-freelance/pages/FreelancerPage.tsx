@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { formatUSD, tokenToUsd } from '../services/StacksService';
 import { Proposal, ProposalStatus } from '../types';
+import HomeFooter from '../components/HomeFooter';
 
 const PROPOSAL_STATUS_CONFIG: Record<ProposalStatus, { label: string; color: string; icon: React.ReactNode; bg: string }> = {
   pending:   { label: 'Pending',   color: 'text-blue-400',    icon: <Clock className="w-3.5 h-3.5" />,        bg: 'bg-blue-950/30 border-blue-900/50' },
@@ -347,6 +348,8 @@ const FreelancerPage: React.FC = () => {
           <p className="text-slate-600 text-xs mt-6 uppercase tracking-wider font-bold">Coming Soon</p>
         </div>
       )}
+
+      <HomeFooter />
     </div>
   );
 };

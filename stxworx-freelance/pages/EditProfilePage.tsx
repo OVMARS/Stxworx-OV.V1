@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
 import EditProfile from '../components/EditProfile';
+import HomeFooter from '../components/HomeFooter';
 
 const EditProfilePage: React.FC = () => {
   const navigate = useNavigate();
@@ -20,16 +21,19 @@ const EditProfilePage: React.FC = () => {
   };
 
   return (
-    <EditProfile
-      profile={currentUserProfile}
-      onSave={onSave}
-      onCancel={() => navigate(dashboardPath)}
-      isSaving={isProcessing}
-      onConnectX={handleConnectX}
-      isXConnected={wallet.isXConnected}
-      xUsername={wallet.xUsername}
-      role={userRole === 'client' ? 'client' : 'freelancer'}
-    />
+    <>
+      <EditProfile
+        profile={currentUserProfile}
+        onSave={onSave}
+        onCancel={() => navigate(dashboardPath)}
+        isSaving={isProcessing}
+        onConnectX={handleConnectX}
+        isXConnected={wallet.isXConnected}
+        xUsername={wallet.xUsername}
+        role={userRole === 'client' ? 'client' : 'freelancer'}
+      />
+      <HomeFooter />
+    </>
   );
 };
 

@@ -7,6 +7,7 @@ import {
   Settings, DollarSign, CheckCircle2, Activity, TrendingUp, User,
 } from 'lucide-react';
 import { formatUSD, tokenToUsd } from '../services/StacksService';
+import HomeFooter from '../components/HomeFooter';
 
 const ClientPage: React.FC = () => {
   const navigate = useNavigate();
@@ -181,6 +182,8 @@ const ClientPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      <HomeFooter />
     </div>
   );
 };

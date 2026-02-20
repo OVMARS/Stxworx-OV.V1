@@ -13,6 +13,9 @@ import ProjectDetailPage from './pages/ProjectDetailPage';
 import BrowseProjectDetailPage from './pages/BrowseProjectDetailPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import PublicProfilePage from './pages/PublicProfilePage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
+import ContactPage from './pages/ContactPage';
 
 const AnimationStyles = () => (
   <style>{`
@@ -85,6 +88,9 @@ const App: React.FC = () => (
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/user/:address" element={<PublicProfilePage />} />
           <Route path="/edit-profile" element={<EditProfilePage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/contact" element={<ContactPage />} />
         </Route>
         <Route element={<MainLayout />}>
           <Route path="/stx-ops-9x7k" element={<AdminLoginPage />} />

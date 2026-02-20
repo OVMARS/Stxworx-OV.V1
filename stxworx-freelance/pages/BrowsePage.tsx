@@ -4,6 +4,7 @@ import { useAppStore } from '../stores/useAppStore';
 import { Briefcase, Clock, DollarSign, Send, CheckCircle2, X, PlusCircle, User } from 'lucide-react';
 import { formatUSD, tokenToUsd } from '../services/StacksService';
 import { Project } from '../types';
+import HomeFooter from '../components/HomeFooter';
 
 const BrowsePage: React.FC = () => {
   const navigate = useNavigate();
@@ -234,6 +235,8 @@ const BrowsePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <HomeFooter />
     </div>
   );
 };

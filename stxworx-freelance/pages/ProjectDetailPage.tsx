@@ -242,6 +242,8 @@ const ProjectDetailPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      <HomeFooter />
     </div>
   );
 };

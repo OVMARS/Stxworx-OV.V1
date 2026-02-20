@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
 import FreelancerProfile from '../components/FreelancerProfile';
+import HomeFooter from '../components/HomeFooter';
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
@@ -37,11 +38,14 @@ const ProfilePage: React.FC = () => {
   };
 
   return (
-    <FreelancerProfile
-      profile={selectedProfile}
-      onBack={() => navigate(-1)}
-      onContact={handleContact}
-    />
+    <>
+      <FreelancerProfile
+        profile={selectedProfile}
+        onBack={() => navigate(-1)}
+        onContact={handleContact}
+      />
+      <HomeFooter />
+    </>
   );
 };
 

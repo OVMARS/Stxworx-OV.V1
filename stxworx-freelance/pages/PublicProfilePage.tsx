@@ -10,6 +10,7 @@ import {
   type LeaderboardEntry,
 } from '../lib/api';
 import type { Project } from '../types';
+import HomeFooter from '../components/HomeFooter';
 
 const PublicProfilePage: React.FC = () => {
   const { address } = useParams<{ address: string }>();
@@ -76,34 +77,43 @@ const PublicProfilePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
-        <div className="w-8 h-8 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto" />
-        <p className="text-slate-400 mt-4 text-sm">Loading profile...</p>
-      </div>
+      <>
+        <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+          <div className="w-8 h-8 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto" />
+          <p className="text-slate-400 mt-4 text-sm">Loading profile...</p>
+        </div>
+        <HomeFooter />
+      </>
     );
   }
 
   if (error || !user) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
-        <p className="text-slate-400">{error || 'User not found.'}</p>
-        <button onClick={() => navigate('/browse')} className="text-orange-500 hover:underline mt-4 text-sm font-bold">
-          Back to Marketplace
-        </button>
-      </div>
+      <>
+        <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+          <p className="text-slate-400">{error || 'User not found.'}</p>
+          <button onClick={() => navigate('/browse')} className="text-orange-500 hover:underline mt-4 text-sm font-bold">
+            Back to Marketplace
+          </button>
+        </div>
+        <HomeFooter />
+      </>
     );
   }
 
   return (
-    <UserProfileView
-      user={user}
-      projects={projects}
-      reviews={reviews}
-      leaderboardStats={leaderboardStats}
-      onBack={() => navigate(-1)}
-      onContact={wallet.isConnected ? handleContact : undefined}
-      isOwnProfile={isOwnProfile}
-    />
+    <>
+      <UserProfileView
+        user={user}
+        projects={projects}
+        reviews={reviews}
+        leaderboardStats={leaderboardStats}
+        onBack={() => navigate(-1)}
+        onContact={wallet.isConnected ? handleContact : undefined}
+        isOwnProfile={isOwnProfile}
+      />
+      <HomeFooter />
+    </>
   );
 };
 

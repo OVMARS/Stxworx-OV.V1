@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
 import { Trophy, Medal, ShieldCheck, ArrowRight, RefreshCw, Crown, Star, Users } from 'lucide-react';
 import { FreelancerProfile } from '../types';
+import HomeFooter from '../components/HomeFooter';
 
 const LeaderboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -185,6 +186,8 @@ const LeaderboardPage: React.FC = () => {
           </p>
         </div>
       )}
+
+      <HomeFooter />
     </div>
   );
 };

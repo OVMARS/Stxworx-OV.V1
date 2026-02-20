@@ -7,6 +7,7 @@ import {
 import { formatUSD, tokenToUsd } from '../services/StacksService';
 import { Project } from '../types';
 import { api, mapBackendProject } from '../lib/api';
+import HomeFooter from '../components/HomeFooter';
 
 const BrowseProjectDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -44,21 +45,27 @@ const BrowseProjectDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
-        <div className="w-8 h-8 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto" />
-        <p className="text-slate-400 mt-4 text-sm">Loading project...</p>
-      </div>
+      <>
+        <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+          <div className="w-8 h-8 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto" />
+          <p className="text-slate-400 mt-4 text-sm">Loading project...</p>
+        </div>
+        <HomeFooter />
+      </>
     );
   }
 
   if (error || !project) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
-        <p className="text-slate-400">{error || 'Project not found.'}</p>
-        <button onClick={() => navigate('/browse')} className="text-orange-500 hover:underline mt-4 text-sm font-bold">
-          Back to Marketplace
-        </button>
-      </div>
+      <>
+        <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+          <p className="text-slate-400">{error || 'Project not found.'}</p>
+          <button onClick={() => navigate('/browse')} className="text-orange-500 hover:underline mt-4 text-sm font-bold">
+            Back to Marketplace
+          </button>
+        </div>
+        <HomeFooter />
+      </>
     );
   }
 
@@ -236,6 +243,8 @@ const BrowseProjectDetailPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <HomeFooter />
     </div>
   );
 };
