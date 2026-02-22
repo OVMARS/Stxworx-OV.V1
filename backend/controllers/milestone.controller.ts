@@ -10,7 +10,8 @@ import type { Project } from "@shared/schema";
 const submitSchema = z.object({
   projectId: z.number().int(),
   milestoneNum: z.number().int().min(1).max(4),
-  deliverableUrl: z.string().min(1).max(500),
+  // Bug Fix: validate deliverableUrl is a proper URL, not just a non-empty string
+  deliverableUrl: z.string().url("deliverableUrl must be a valid URL").max(500),
   description: z.string().optional(),
   completionTxId: z.string().max(100).optional(),
 });
@@ -49,6 +50,21 @@ export const milestoneController = {
       }
       if (project.status !== "active") {
         return res.status(400).json({ message: "Project is not active" });
+      }
+
+      // Bug Fix: Prevent duplicate submissions for the same milestone while one is still pending
+      const [existingSubmission] = await db
+        .select()
+        .from(milestoneSubmissions)
+        .where(
+          and(
+            eq(milestoneSubmissions.projectId, projectId),
+            eq(milestoneSubmissions.milestoneNum, milestoneNum),
+            eq(milestoneSubmissions.status, "submitted")
+          )
+        );
+      if (existingSubmission) {
+        return res.status(409).json({ message: "A pending submission already exists for this milestone" });
       }
 
       const insertResult = await db

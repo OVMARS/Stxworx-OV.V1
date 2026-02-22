@@ -193,6 +193,10 @@ export const projectController = {
       const project = await projectService.getById(id);
       if (!project) return res.status(404).json({ message: "Project not found" });
       if (project.clientId !== req.user!.id) return res.status(403).json({ message: "Not authorized" });
+      // Bug Fix: prevent activating a project that has no accepted freelancer yet
+      if (!project.freelancerId) {
+        return res.status(400).json({ message: "Cannot activate project: no freelancer has been assigned. Accept a proposal first." });
+      }
 
       const activated = await projectService.activate(id, result.data.escrowTxId, result.data.onChainId);
       return res.status(200).json(activated);

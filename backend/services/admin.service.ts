@@ -194,10 +194,11 @@ export const adminService = {
     return updated || null;
   },
 
+  // Bug Fix: resetDispute does not use favorFreelancer — removed from signature to match actual usage
   async resetDispute(
     disputeId: number,
     adminId: number,
-    data: { resolution: string; resolutionTxId: string; favorFreelancer: boolean }
+    data: { resolution: string; resolutionTxId: string }
   ) {
     // Get the dispute first
     const [dispute] = await db.select().from(disputes).where(eq(disputes.id, disputeId));

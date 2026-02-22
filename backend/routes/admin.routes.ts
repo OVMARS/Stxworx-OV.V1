@@ -44,5 +44,6 @@ adminRoutes.patch("/users/:id/status", requireAdmin, adminController.updateUserS
 // NFTs
 adminRoutes.post("/nfts", requireAdmin, adminController.createNft);
 adminRoutes.get("/nfts", requireAdmin, adminController.getAllNfts);
-adminRoutes.patch("/nfts/:id/confirm-mint", requireAdmin, adminController.confirmMint);
+// Static sub-routes MUST come before dynamic /:id routes to avoid shadowing
 adminRoutes.get("/nfts/user/:userId", requireAdmin, adminController.getNftsByUser);
+adminRoutes.patch("/nfts/:id/confirm-mint", requireAdmin, adminController.confirmMint);

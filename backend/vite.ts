@@ -37,9 +37,13 @@ export async function setupVite(app: Express, server: Server) {
     allowedHosts: true as const,
   };
 
+  // Bug Fix: root was pointing to a non-existent "frontend" directory.
+  // The actual frontend source lives in "stxworx-freelance".
+  const frontendRoot = path.resolve(_currentDir, "..", "stxworx-freelance");
+
   const vite = await createViteServer({
     ...viteConfig,
-    root: path.resolve(_currentDir, "..", "frontend"),
+    root: frontendRoot,
     configFile: false,
     customLogger: {
       ...viteLogger,
@@ -57,10 +61,11 @@ export async function setupVite(app: Express, server: Server) {
     const url = req.originalUrl;
 
     try {
+      // Bug Fix: use _currentDir (consistent ESM/CJS) and correct "stxworx-freelance" path
       const clientTemplate = path.resolve(
-        __dirname,
+        _currentDir,
         "..",
-        "frontend",
+        "stxworx-freelance",
         "index.html",
       );
 

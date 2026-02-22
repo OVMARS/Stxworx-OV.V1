@@ -4,11 +4,13 @@ import { requireAuth } from "../middleware/auth";
 
 export const userRoutes = Router();
 
-// Public
+// Static routes MUST come before dynamic /:address routes to avoid shadowing
 userRoutes.get("/leaderboard", userController.getLeaderboard);
+
+// Protected — static path must be registered before /:address wildcard
+userRoutes.patch("/me", requireAuth, userController.updateMe);
+
+// Public — dynamic param routes come last
 userRoutes.get("/:address", userController.getByAddress);
 userRoutes.get("/:address/reviews", userController.getReviews);
 userRoutes.get("/:address/projects", userController.getProjectsByAddress);
-
-// Protected
-userRoutes.patch("/me", requireAuth, userController.updateMe);
