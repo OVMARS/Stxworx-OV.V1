@@ -45,12 +45,33 @@ export function signout() {
 /**
  * Prompt the wallet to sign a plain-text message.
  * Returns { signature, publicKey } on success, null if cancelled.
+ *
+ * Fix: @stacks/connect v8 uses the new JSON-RPC 'stx_signMessage' method.
+ * Some wallets (Leather ≥ 6.x) return the publicKey in compressed (33-byte)
+ * hex format. We normalise the result and log errors clearly for debugging.
  */
 export async function requestSignMessage(message: string): Promise<{ signature: string; publicKey: string } | null> {
     try {
         const result = await stacksRequest('stx_signMessage', { message });
-        return { signature: result.signature, publicKey: result.publicKey };
-    } catch {
+        if (!result?.signature || !result?.publicKey) {
+            console.error('[requestSignMessage] Wallet returned incomplete result:', result);
+            return null;
+        }
+        return {
+            signature: result.signature as string,
+            publicKey: result.publicKey as string,
+        };
+    } catch (err: any) {
+        // User cancelled — this is expected, don't log as error
+        if (
+            err?.code === 4001 ||
+            err?.message?.includes('cancel') ||
+            err?.message?.includes('denied') ||
+            err?.message?.includes('rejected')
+        ) {
+            return null;
+        }
+        console.error('[requestSignMessage] Signing failed:', err);
         return null;
     }
 }

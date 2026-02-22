@@ -24,13 +24,33 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-// CORS
-const CORS_ORIGIN = process.env.CORS_ORIGIN || "http://localhost:5173";
+// CORS — supports multiple allowed origins (localhost dev + public proxy)
+const ALLOWED_ORIGINS: (string | RegExp)[] = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:5001",
+  // Allow any manus.computer public proxy subdomain for preview
+  /^https:\/\/.*\.manus\.computer$/,
+];
+// Additional origins from env (comma-separated)
+if (process.env.CORS_ORIGIN) {
+  process.env.CORS_ORIGIN.split(",").forEach((o) => ALLOWED_ORIGINS.push(o.trim()));
+}
+function isAllowedOrigin(origin: string | undefined): boolean {
+  if (!origin) return true;
+  return ALLOWED_ORIGINS.some((allowed) =>
+    typeof allowed === "string" ? allowed === origin : allowed.test(origin)
+  );
+}
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", CORS_ORIGIN);
-  res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.header("Access-Control-Allow-Credentials", "true");
+  const origin = req.headers.origin;
+  if (isAllowedOrigin(origin)) {
+    res.header("Access-Control-Allow-Origin", origin || "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Vary", "Origin");
+  }
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }

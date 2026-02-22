@@ -1,4 +1,4 @@
-import { verifyMessageSignatureRsv } from "@stacks/encryption";
+import { verifyMessageSignatureRsv, verifyMessageSignature } from "@stacks/encryption";
 import { db } from "../db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -17,12 +17,23 @@ export const authService = {
   }) {
     const { stxAddress, publicKey, signature, message, role } = data;
 
-    // Verify the Stacks signed message
-    const isValid = verifyMessageSignatureRsv({
-      message,
-      publicKey,
-      signature,
-    });
+    // Fix: @stacks/connect v8 uses 'stx_signMessage' which returns signatures in
+    // different formats depending on the wallet (Leather, Xverse, etc.).
+    // We try both verifyMessageSignatureRsv (Clarity-compatible, RSV format) and
+    // the legacy verifyMessageSignature to handle all wallet implementations.
+    let isValid = false;
+    try {
+      isValid = verifyMessageSignatureRsv({ message, publicKey, signature });
+    } catch {
+      // RSV parse failed — try legacy format
+    }
+    if (!isValid) {
+      try {
+        isValid = verifyMessageSignature({ message, publicKey, signature });
+      } catch {
+        // Both failed
+      }
+    }
 
     if (!isValid) {
       throw new Error("Invalid wallet signature");

@@ -23,10 +23,14 @@ export const authController = {
       const { user, token } = await authService.verifyWalletAndLogin(result.data);
 
       const isProduction = process.env.NODE_ENV === "production";
+      // Fix: use sameSite 'lax' instead of 'strict'.
+      // 'strict' blocks cookies on cross-origin navigations (e.g. from the
+      // manus.computer preview proxy), which breaks the entire auth flow.
+      // 'lax' still protects against CSRF while allowing top-level navigations.
       res.cookie(getUserCookieName(), token, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: "strict",
+        sameSite: "lax",
         maxAge: 24 * 60 * 60 * 1000,
         path: "/",
       });
@@ -41,8 +45,14 @@ export const authController = {
         },
       });
     } catch (error: any) {
-      if (error.message === "Invalid wallet signature") {
-        return res.status(401).json({ message: "Invalid wallet signature" });
+      // Fix: catch all signature-related errors and return 401 (not 500)
+      if (
+        error.message === "Invalid wallet signature" ||
+        error.message?.includes("Invalid signature") ||
+        error.message?.includes("signature") ||
+        error.message?.includes("parseRecoverableSignature")
+      ) {
+        return res.status(401).json({ message: "Invalid wallet signature. Please try connecting again." });
       }
       console.error("Wallet verify error:", error);
       return res.status(500).json({ message: "Internal server error" });
@@ -53,7 +63,7 @@ export const authController = {
   async logout(_req: Request, res: Response) {
     res.clearCookie(getUserCookieName(), {
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
     });
     return res.status(200).json({ message: "Logout successful" });
